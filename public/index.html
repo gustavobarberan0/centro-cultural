@@ -3,65 +3,122 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda Cultural</title>
+  <title>Agenda — Centro Cultural</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+<div class="app-layout">
 
-<!-- HEADER -->
-<header class="header">
-  <div class="header-logo" id="headerLogo">
-    <div class="header-logo-placeholder">AC</div>
-  </div>
-  <div>
-    <div class="header-title">Agenda Cultural</div>
-    <div class="header-sub">Centro Cultural Municipal</div>
-  </div>
-  <div class="header-spacer"></div>
-  <div class="header-nav" id="headerNav"></div>
-  <div class="header-user">
-    <div class="user-chip">
-      <span id="userNombre">—</span>
-      <span class="rol" id="userRol"></span>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo" id="sidebarLogo">
+      <div class="sidebar-logo-placeholder" id="logoPlaceholder">CC</div>
+      <div>
+        <div class="sidebar-app-name">Centro Cultural</div>
+        <div class="sidebar-app-sub">Sistema de Reservas</div>
+      </div>
     </div>
-    <button class="btn-logout" onclick="logout()">Salir</button>
-  </div>
-</header>
 
-<!-- TOOLBAR -->
-<div class="toolbar" id="toolbar">
-  <div class="view-tabs">
-    <button class="view-tab active" onclick="setVista('mensual')">Mes</button>
-    <button class="view-tab" onclick="setVista('semanal')">Semana</button>
-    <button class="view-tab" onclick="setVista('diaria')">Día</button>
-    <button class="view-tab" onclick="setVista('lista')">Lista</button>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Calendario</div>
+      <div class="nav-item active" onclick="setVista('mensual')" id="navMensual">
+        <span class="nav-icon">📅</span><span>Calendario</span>
+      </div>
+      <div class="nav-item" onclick="setVista('lista')" id="navLista">
+        <span class="nav-icon">📋</span><span>Todas las Reservas</span>
+      </div>
+
+      <div class="nav-section-label" style="margin-top:.4rem">Acciones</div>
+      <div class="nav-item" onclick="abrirNueva()">
+        <span class="nav-icon">➕</span><span>Nueva Reserva</span>
+      </div>
+      <div class="nav-item" id="navAdmin" style="display:none" onclick="abrirAdmin()">
+        <span class="nav-icon">⚙️</span><span>Administración</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-stats" id="sidebarStats">
+      <div class="stat-card">
+        <div class="stat-label">Reservas Hoy</div>
+        <div class="stat-val" id="statHoy">0</div>
+        <div class="stat-sub">eventos programados para hoy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Espacios Disponibles</div>
+        <div class="stat-val" id="statEspacios">2</div>
+        <div class="stat-sub">Salón Principal · Aula/Taller</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="userNombre">—</div>
+        <div class="user-rol"  id="userRol"></div>
+      </div>
+      <button class="btn-logout-side" onclick="logout()" title="Salir">⏻</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-titles">
+        <div class="topbar-title" id="topbarTitle">Calendario</div>
+        <div class="topbar-sub">Gestión de reservas y eventos del centro cultural</div>
+      </div>
+      <div class="nav-fecha">
+        <button onclick="navFecha(-1)">‹</button>
+        <div class="fecha-label" id="fechaLabel">—</div>
+        <button onclick="navFecha(1)">›</button>
+      </div>
+      <button class="btn-hoy" onclick="irHoy()">Hoy</button>
+      <div class="view-tabs">
+        <button class="view-tab active" onclick="setVista('mensual')">Mes</button>
+        <button class="view-tab" onclick="setVista('semanal')">Semana</button>
+        <button class="view-tab" onclick="setVista('diaria')">Día</button>
+        <button class="view-tab" onclick="setVista('lista')">Lista</button>
+      </div>
+      <button class="btn-nueva-reserva" onclick="abrirNueva()">+ Nueva Reserva</button>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content-split">
+      <!-- CALENDAR -->
+      <div class="calendar-area" id="calendarArea">
+        <div class="filtros-bar">
+          <div class="filtro-chip todos active" onclick="setFiltro('todos')">
+            <span class="dot" style="background:#4F6EF7"></span>Todos
+          </div>
+          <div class="filtro-chip salon" onclick="setFiltro('salon')">
+            <span class="dot" style="background:#4F6EF7"></span>Salón Principal
+          </div>
+          <div class="filtro-chip aula" onclick="setFiltro('aula')">
+            <span class="dot" style="background:#F7604F"></span>Aula / Taller
+          </div>
+        </div>
+        <div id="calendarWrap"></div>
+      </div>
+
+      <!-- DETAIL PANEL -->
+      <div class="detail-panel" id="detailPanel">
+        <div class="detail-panel-header">
+          <h3>Detalles de la Reserva</h3>
+        </div>
+        <div class="detail-empty" id="detailEmpty">
+          <div class="detail-empty-icon">📌</div>
+          <div>Seleccioná una reserva para ver los detalles</div>
+        </div>
+        <div class="detail-content" id="detailContent" style="display:none"></div>
+      </div>
+    </div>
   </div>
-  <div class="nav-fecha">
-    <button onclick="navFecha(-1)">‹</button>
-    <div class="fecha-label" id="fechaLabel">—</div>
-    <button onclick="navFecha(1)">›</button>
-    <button class="nav-btn" onclick="irHoy()" style="font-size:.78rem;padding:.3rem .6rem">Hoy</button>
-  </div>
-  <div class="toolbar-spacer"></div>
-  <div class="filtro-espacio">
-    <button class="filtro-btn todos active" onclick="setFiltro('todos')">Todos</button>
-    <button class="filtro-btn aula1" onclick="setFiltro('aula1')">Aula 1</button>
-    <button class="filtro-btn aula2" onclick="setFiltro('aula2')">Aula 2</button>
-    <button class="filtro-btn cine" onclick="setFiltro('cine')">Cine</button>
-    <button class="filtro-btn conferencias" onclick="setFiltro('conferencias')">Conferencias</button>
-    <button class="filtro-btn ingreso" onclick="setFiltro('ingreso')">Ingreso</button>
-  </div>
-  <button class="btn-nueva" onclick="abrirNueva()">+ Nueva reserva</button>
 </div>
 
-<!-- CALENDARIO -->
-<div class="main">
-  <div class="calendar-wrap" id="calendarWrap"></div>
-</div>
-
-<!-- MODAL RESERVA -->
+<!-- MODAL NUEVA/EDITAR RESERVA -->
 <div class="modal-overlay" id="modalReserva">
   <div class="modal">
     <div class="modal-header">
@@ -73,11 +130,8 @@
       <div class="field">
         <label>Espacio</label>
         <select id="rEspacio" onchange="checkConflictos()">
-          <option value="aula1">Aula 1</option>
-          <option value="aula2">Aula 2</option>
-          <option value="cine">Sala de Cine</option>
-          <option value="conferencias">Sala de Conferencias</option>
-          <option value="ingreso">Ingreso Principal</option>
+          <option value="salon">Salón Principal</option>
+          <option value="aula">Aula / Taller</option>
         </select>
       </div>
       <div class="field">
@@ -114,46 +168,30 @@
   </div>
 </div>
 
-<!-- MODAL DETALLE -->
-<div class="modal-overlay" id="modalDetalle">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>Detalle de reserva</h3>
-      <button onclick="cerrarModal('modalDetalle')">✕</button>
-    </div>
-    <div class="modal-body" id="detalleBody"></div>
-    <div class="modal-footer" id="detalleFooter"></div>
-  </div>
-</div>
-
 <!-- MODAL ADMIN -->
 <div class="modal-overlay" id="modalAdmin">
-  <div class="modal" style="max-width:700px">
+  <div class="modal" style="max-width:680px">
     <div class="modal-header">
       <h3>Panel de administración</h3>
       <button onclick="cerrarModal('modalAdmin')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="admin-wrap" style="padding:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-          <span style="font-family:Syne,sans-serif;font-weight:700">Usuarios</span>
-          <span style="font-size:.78rem;color:var(--text2)" id="adminSubtitle"></span>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="admin-table" id="adminTable">
-            <thead><tr>
-              <th>Nombre</th><th>Email</th><th>Rol</th><th>Reservas</th><th>Acciones</th>
-            </tr></thead>
-            <tbody id="adminTbody"></tbody>
-          </table>
-        </div>
-        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
-          <div style="font-family:Syne,sans-serif;font-weight:700;margin-bottom:.8rem">Logo del sitio</div>
-          <div class="logo-upload-area" id="logoUploadArea">
-            <input type="file" accept="image/*" onchange="subirLogo(this)">
-            <div id="logoPreviewWrap">
-              <p style="font-size:.82rem;color:var(--text2)">Hacé click para subir el escudo / logo<br><span style="font-size:.72rem">PNG, JPG, SVG — máx 2MB</span></p>
-            </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem">
+        <span style="font-weight:700;font-size:.9rem">Usuarios registrados</span>
+        <span style="font-size:.75rem;color:var(--text2)" id="adminSubtitle"></span>
+      </div>
+      <div style="overflow-x:auto;margin-bottom:1.4rem">
+        <table class="admin-table">
+          <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Reservas</th><th>Acciones</th></tr></thead>
+          <tbody id="adminTbody"></tbody>
+        </table>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:1rem">
+        <div style="font-weight:700;font-size:.88rem;margin-bottom:.7rem">Logo del sitio</div>
+        <div class="logo-upload-area">
+          <input type="file" accept="image/*" onchange="subirLogo(this)">
+          <div id="logoPreviewWrap">
+            <p style="font-size:.8rem;color:var(--text2)">Hacé click para subir el escudo / logo<br><span style="font-size:.7rem">PNG, JPG, SVG — máx 2MB</span></p>
           </div>
         </div>
       </div>
@@ -164,9 +202,7 @@
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
-
 <script src="/js/app.js"></script>
 </body>
 </html>
