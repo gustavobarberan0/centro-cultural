@@ -85,7 +85,7 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 
 /* CONTENT SPLIT */
 .content-split { flex: 1; display: flex; overflow: hidden; }
-.calendar-area { flex: 1; overflow: auto; padding: .9rem; }
+.calendar-area { flex: 1; overflow: auto; padding: .9rem; min-height: 0; }
 .detail-panel  { width: 290px; flex-shrink: 0; background: var(--surface); border-left: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
 
 /* FILTROS */
@@ -97,9 +97,9 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .filtro-chip.active.aula  { border-color: var(--aula);  color: var(--aula);  background: rgba(247,96,79,.06); }
 
 /* MENSUAL */
-.cal-mensual { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.cal-mensual { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; gap: 3px; }
 .cal-header-day { text-align: center; font-size: .68rem; font-weight: 600; color: var(--text2); text-transform: uppercase; padding: .45rem 0; }
-.cal-day { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); min-height: 85px; padding: .38rem .4rem; cursor: pointer; transition: all .16s; }
+.cal-day { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); min-height: 0; height: 100%; padding: .38rem .4rem; cursor: pointer; transition: all .16s; }
 .cal-day:hover { border-color: var(--salon); box-shadow: 0 2px 8px rgba(79,110,247,.1); }
 .cal-day.otro-mes { background: var(--surface2); opacity: .55; }
 .cal-day.hoy { border-color: var(--salon); border-width: 2px; }
@@ -327,7 +327,7 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 
   /* Mensual compacto */
   .cal-mensual { gap: 2px; }
-  .cal-day { min-height: 54px; padding: .22rem .25rem; border-radius: 6px; }
+  .cal-day { min-height: 54px; height: auto; padding: .22rem .25rem; border-radius: 6px; }
   .day-num { font-size: .7rem; margin-bottom: .2rem; }
   .cal-evento { font-size: .56rem; padding: .07rem .2rem; }
   .cal-header-day { font-size: .6rem; padding: .32rem 0; }
@@ -379,13 +379,13 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 
 /* ── Nueva reserva FAB (mobile) ── */
 .fab-nueva {
-  display: none; position: fixed; bottom: 72px; right: 1rem; z-index: 210;
-  width: 50px; height: 50px; border-radius: 50%;
+  display: none; position: fixed; bottom: 80px; right: 1rem; z-index: 210;
+  width: 48px; height: 48px; border-radius: 50%;
   background: var(--salon); color: #fff; border: none;
-  font-size: 1.5rem; cursor: pointer; align-items: center; justify-content: center;
+  font-size: 1.6rem; line-height: 1; cursor: pointer; align-items: center; justify-content: center;
   box-shadow: 0 4px 16px rgba(79,110,247,.45); transition: all .18s;
 }
-.fab-nueva:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(79,110,247,.55); }
+.fab-nueva:hover { transform: scale(1.08); }
 @media (max-width: 640px) { .fab-nueva { display: flex; } }
 
 /* ── Colores por espacio ── */
@@ -471,6 +471,9 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
   border-radius: var(--radius); padding: .75rem 1rem;
   margin-bottom: .85rem; display: flex; align-items: flex-start;
   gap: .75rem; animation: bannerSlide .35s ease;
+}
+@media (max-width: 640px) {
+  .banner-hoy { margin-right: 0; }
 }
 @keyframes bannerSlide {
   from { opacity: 0; transform: translateY(-8px); }
@@ -566,4 +569,62 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 @media (max-width: 900px) {
   .btn-change-pass { display: none; }
   .sidebar.drawer-open .btn-change-pass { display: block; }
+}
+
+/* ── Detail panel drawer (mobile) ── */
+.detail-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.detail-panel-close {
+  display: none; background: none; border: none; color: var(--text2);
+  font-size: 1rem; cursor: pointer; width: 28px; height: 28px;
+  border-radius: 6px; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.detail-panel-close:hover { background: var(--bg); color: var(--text); }
+
+@media (max-width: 640px) {
+  /* Detail panel oculto por defecto, aparece como drawer desde la derecha */
+  .detail-panel {
+    display: none;
+    position: fixed; right: 0; top: 0; bottom: 0; z-index: 260;
+    width: 88vw !important; max-width: 340px;
+    box-shadow: -4px 0 24px rgba(0,0,0,.2);
+    border-left: 1px solid var(--border);
+    flex-direction: column;
+  }
+  .detail-panel.drawer-open {
+    display: flex !important;
+    animation: detailDrawerIn .22s ease;
+  }
+  @keyframes detailDrawerIn {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+  .detail-panel-close { display: flex; }
+  .detail-content { overflow-y: auto; }
+}
+
+/* ── Banner hoy — fix mobile ── */
+@media (max-width: 640px) {
+  .banner-hoy {
+    flex-direction: column; gap: .5rem; padding: .65rem .75rem;
+  }
+  .banner-hoy-title {
+    font-size: .8rem; gap: .4rem;
+  }
+  .banner-hoy-eventos {
+    gap: .35rem;
+  }
+  .banner-item {
+    font-size: .72rem; padding: .22rem .6rem;
+    max-width: 100%;
+  }
+  .banner-item em {
+    display: none; /* ocultar espacio en mobile para compactar */
+  }
+  .banner-close {
+    position: absolute; top: .5rem; right: .5rem;
+  }
+  .banner-hoy { position: relative; }
 }

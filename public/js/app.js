@@ -164,7 +164,7 @@ function actualizarStats() {
 
 // ── Navegación ─────────────────────────────────────────────────────────────────
 function setVista(v) {
-  if (window.innerWidth <= 900) closeDrawer();
+  if (window.innerWidth <= 900) closeAllDrawers();
   state.vista = v;
   // View tabs en topbar
   document.querySelectorAll('.view-tab').forEach((el,i) =>
@@ -381,6 +381,7 @@ function seleccionarReserva(id) {
 
   document.getElementById('detailEmpty').style.display   = 'none';
   document.getElementById('detailContent').style.display = 'block';
+  if (window.innerWidth <= 640) openDetailPanel();
 
   document.getElementById('detailContent').innerHTML = `
     <div class="detail-espacio-badge ${ev.espacio}">
@@ -627,23 +628,54 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 
 function toggleDrawer() {
   const sidebar = document.querySelector('.sidebar');
-  const overlay = document.getElementById('drawerOverlay');
   const isOpen  = sidebar.classList.contains('drawer-open');
   if (isOpen) closeDrawer();
   else {
+    closeDetailPanel(true); // cerrar detail si estaba abierto
     sidebar.style.display = 'flex';
     sidebar.classList.add('drawer-open');
-    overlay.classList.add('open');
+    showOverlay();
   }
 }
 
 function closeDrawer() {
   const sidebar = document.querySelector('.sidebar');
-  const overlay = document.getElementById('drawerOverlay');
   sidebar.classList.remove('drawer-open');
-  overlay.classList.remove('open');
-  // On mobile hide sidebar again after close
   if (window.innerWidth <= 640) sidebar.style.display = 'none';
+  // Solo ocultar overlay si el detail tampoco está abierto
+  const detail = document.getElementById('detailPanel');
+  if (!detail.classList.contains('drawer-open')) hideOverlay();
+}
+
+function openDetailPanel() {
+  if (window.innerWidth > 640) return; // en desktop se muestra siempre
+  const detail = document.getElementById('detailPanel');
+  closeDrawer(); // cerrar sidebar si estaba abierto
+  detail.style.display = 'flex';
+  detail.classList.add('drawer-open');
+  showOverlay();
+}
+
+function closeDetailPanel(silent = false) {
+  const detail = document.getElementById('detailPanel');
+  detail.classList.remove('drawer-open');
+  if (window.innerWidth <= 640) detail.style.display = 'none';
+  if (!silent) {
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar.classList.contains('drawer-open')) hideOverlay();
+  }
+}
+
+function closeAllDrawers() {
+  closeDrawer();
+  closeDetailPanel();
+}
+
+function showOverlay() {
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+function hideOverlay() {
+  document.getElementById('drawerOverlay').classList.remove('open');
 }
 
 // ── Contraseñas ───────────────────────────────────────────────────────────────

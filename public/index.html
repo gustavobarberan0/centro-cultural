@@ -124,6 +124,7 @@
       <div class="detail-panel" id="detailPanel">
         <div class="detail-panel-header">
           <h3>Detalles de la Reserva</h3>
+          <button class="detail-panel-close" onclick="closeDetailPanel()" title="Cerrar">✕</button>
         </div>
         <div class="detail-empty" id="detailEmpty">
           <div class="detail-empty-icon">📌</div>
@@ -225,7 +226,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- DRAWER OVERLAY -->
-<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeAllDrawers()"></div>
 
 <!-- MODAL CAMBIAR MI CONTRASEÑA -->
 <div class="modal-overlay" id="modalMiPass">
