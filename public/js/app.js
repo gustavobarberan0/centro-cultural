@@ -99,6 +99,8 @@ async function init() {
       const bnavAdmin = document.getElementById('bnav-admin');
       if (bnavAdmin) bnavAdmin.style.display = 'flex';
     }
+    // Mobile: hide logout side button label (shown as top button instead)
+
 
     await cargarLogo();
     await cargarReservas();
@@ -162,6 +164,7 @@ function actualizarStats() {
 
 // ── Navegación ─────────────────────────────────────────────────────────────────
 function setVista(v) {
+  if (window.innerWidth <= 900) closeDrawer();
   state.vista = v;
   // View tabs en topbar
   document.querySelectorAll('.view-tab').forEach((el,i) =>
@@ -620,6 +623,27 @@ document.addEventListener('keydown', e => {
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if(e.target===o) cerrarModal(o.id); });
 });
+
+function toggleDrawer() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('drawerOverlay');
+  const isOpen  = sidebar.classList.contains('drawer-open');
+  if (isOpen) closeDrawer();
+  else {
+    sidebar.style.display = 'flex';
+    sidebar.classList.add('drawer-open');
+    overlay.classList.add('open');
+  }
+}
+
+function closeDrawer() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('drawerOverlay');
+  sidebar.classList.remove('drawer-open');
+  overlay.classList.remove('open');
+  // On mobile hide sidebar again after close
+  if (window.innerWidth <= 640) sidebar.style.display = 'none';
+}
 
 function setBottomNav(id) {
   document.querySelectorAll('.bottom-nav-item').forEach(el =>

@@ -24,18 +24,18 @@
     <nav class="sidebar-nav">
       <div class="nav-section-label">Calendario</div>
       <div class="nav-item active" onclick="setVista('mensual')" id="navMensual">
-        <span class="nav-icon">📅</span><span>Calendario</span>
+        <span class="nav-icon">&#9632;</span><span>Calendario</span>
       </div>
       <div class="nav-item" onclick="setVista('lista')" id="navLista">
-        <span class="nav-icon">📋</span><span>Todas las Reservas</span>
+        <span class="nav-icon">&#9776;</span><span>Todas las Reservas</span>
       </div>
 
       <div class="nav-section-label" style="margin-top:.4rem">Acciones</div>
       <div class="nav-item" onclick="abrirNueva()">
-        <span class="nav-icon">➕</span><span>Nueva Reserva</span>
+        <span class="nav-icon">+</span><span>Nueva Reserva</span>
       </div>
       <div class="nav-item" id="navAdmin" style="display:none" onclick="abrirAdmin()">
-        <span class="nav-icon">⚙️</span><span>Administración</span>
+        <span class="nav-icon">&#9881;</span><span>Administración</span>
       </div>
     </nav>
 
@@ -66,6 +66,7 @@
   <div class="main-area">
     <!-- TOP BAR -->
     <div class="topbar">
+      <button class="btn-hamburger" onclick="toggleDrawer()" id="btnHamburger">&#9776;</button>
       <div class="topbar-titles">
         <div class="topbar-title" id="topbarTitle">Calendario</div>
         <div class="topbar-sub">Gestión de reservas y eventos del centro cultural</div>
@@ -83,6 +84,7 @@
         <button class="view-tab" onclick="setVista('lista')">Lista</button>
       </div>
       <button class="btn-nueva-reserva" onclick="abrirNueva()">+ Nueva Reserva</button>
+      <button class="btn-logout-top" onclick="logout()" title="Cerrar sesión">Salir</button>
     </div>
 
     <!-- CONTENT -->
@@ -216,22 +218,26 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- DRAWER OVERLAY -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- FAB Nueva Reserva (mobile) -->
+<button class="fab-nueva" onclick="abrirNueva()" title="Nueva reserva">+</button>
+
 <!-- BOTTOM NAV (mobile only) -->
 <nav class="bottom-nav" id="bottomNav">
   <button class="bottom-nav-item active" id="bnav-cal" onclick="setVista('mensual');setBottomNav('bnav-cal')">
-    <span class="bnav-icon">📅</span>Calendario
+    <span class="bnav-icon">&#9632;</span>Calendario
   </button>
   <button class="bottom-nav-item" id="bnav-lista" onclick="setVista('lista');setBottomNav('bnav-lista')">
-    <span class="bnav-icon">📋</span>Reservas
+    <span class="bnav-icon">&#9776;</span>Reservas
   </button>
-  <button class="bottom-nav-item" id="bnav-nueva" onclick="abrirNueva()">
-    <span class="bnav-icon">➕</span>Nueva
-  </button>
+
   <button class="bottom-nav-item" id="bnav-hoy" onclick="irHoy();setVista('diaria');setBottomNav('bnav-hoy')">
-    <span class="bnav-icon">🔍</span>Hoy
+    <span class="bnav-icon">&#9675;</span>Hoy
   </button>
   <button class="bottom-nav-item" id="bnav-admin" onclick="abrirAdmin()" style="display:none">
-    <span class="bnav-icon">⚙️</span>Admin
+    <span class="bnav-icon">&#9881;</span>Admin
   </button>
 </nav>
 

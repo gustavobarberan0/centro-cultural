@@ -239,6 +239,44 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
    RESPONSIVE
 ═══════════════════════════════════════════════ */
 
+/* Hamburger — solo mobile */
+.btn-hamburger {
+  display: none; background: none; border: 1.5px solid var(--border);
+  color: var(--text); width: 36px; height: 36px; border-radius: 8px;
+  cursor: pointer; font-size: 1.1rem; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all .16s;
+}
+.btn-hamburger:hover { border-color: var(--salon); color: var(--salon); }
+
+/* Logout top — solo mobile */
+.btn-logout-top {
+  display: none; background: rgba(239,68,68,.08); color: var(--danger);
+  border: 1.5px solid rgba(239,68,68,.2); padding: .38rem .8rem;
+  border-radius: 8px; cursor: pointer; font-family: 'Outfit', sans-serif;
+  font-weight: 600; font-size: .8rem; flex-shrink: 0; transition: all .16s;
+  white-space: nowrap;
+}
+.btn-logout-top:hover { background: rgba(239,68,68,.16); }
+
+/* Drawer overlay */
+.drawer-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 250; backdrop-filter: blur(2px);
+}
+.drawer-overlay.open { display: block; }
+
+/* Sidebar drawer en mobile */
+.sidebar.drawer-open {
+  position: fixed; left: 0; top: 0; bottom: 0; z-index: 260;
+  width: 240px !important; display: flex !important;
+  box-shadow: 4px 0 24px rgba(0,0,0,.25);
+  animation: drawerIn .22s ease;
+}
+@keyframes drawerIn {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
 /* ── Tablet (≤900px) ── */
 @media (max-width: 900px) {
   .sidebar { width: 56px; }
@@ -250,82 +288,105 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
   .sidebar-logo > div:last-child { display: none; }
   .sidebar-user { justify-content: center; padding: .6rem .3rem; }
   .detail-panel { width: 260px; }
-  .fecha-label { min-width: 120px; font-size: .82rem; }
-  .topbar { gap: .5rem; }
+  .fecha-label { min-width: 130px; font-size: .82rem; }
+
+  /* En drawer abierto mostrar todo */
+  .sidebar.drawer-open .sidebar-app-name,
+  .sidebar.drawer-open .sidebar-app-sub,
+  .sidebar.drawer-open .nav-item span,
+  .sidebar.drawer-open .sidebar-stats,
+  .sidebar.drawer-open .user-info,
+  .sidebar.drawer-open .nav-section-label { display: block; }
+  .sidebar.drawer-open .nav-item { justify-content: flex-start; padding: .5rem 1rem; margin: .08rem .5rem; }
+  .sidebar.drawer-open .sidebar-logo { padding: 1.1rem 1rem .9rem; justify-content: flex-start; }
+  .sidebar.drawer-open .sidebar-logo > div:last-child { display: block; }
+  .sidebar.drawer-open .sidebar-user { justify-content: flex-start; padding: .75rem; }
 }
 
 /* ── Mobile (≤640px) ── */
 @media (max-width: 640px) {
-  /* Esconder sidebar — usamos nav bottom */
   .sidebar { display: none; }
   .detail-panel { display: none; }
+  .btn-hamburger { display: flex; }
+  .btn-logout-top { display: flex; }
+  .btn-logout-side { display: none; }
 
-  .main-area { height: 100dvh; }
-
-  /* Topbar compacto */
-  .topbar { padding: .5rem .75rem; flex-wrap: nowrap; gap: .4rem; overflow-x: auto; }
+  /* Topbar */
+  .topbar { padding: .5rem .65rem; gap: .4rem; flex-wrap: nowrap; }
   .topbar-titles { display: none; }
   .view-tabs { display: none; }
-  .btn-nueva-reserva span { display: none; }
-  .btn-nueva-reserva { padding: .42rem .65rem; font-size: .85rem; }
-  .fecha-label { min-width: 100px; font-size: .8rem; }
-  .nav-fecha button { width: 26px; height: 26px; }
+  .btn-nueva-reserva { display: none; }
 
-  /* Calendar area */
-  .calendar-area { padding: .6rem .5rem; }
-  .content-split { flex-direction: column; }
+  /* Fecha nav compacto */
+  .fecha-label { min-width: 90px; font-size: .78rem; }
+  .nav-fecha button { width: 26px; height: 26px; font-size: .85rem; }
+  .btn-hoy { padding: .25rem .55rem; font-size: .72rem; }
 
-  /* Mensual: días más compactos */
+  /* Contenido */
+  .calendar-area { padding: .55rem .45rem; }
+
+  /* Mensual compacto */
   .cal-mensual { gap: 2px; }
-  .cal-day { min-height: 56px; padding: .25rem .28rem; border-radius: 7px; }
-  .day-num { font-size: .72rem; }
-  .cal-evento { font-size: .58rem; padding: .08rem .22rem; }
-  .cal-header-day { font-size: .62rem; padding: .35rem 0; }
+  .cal-day { min-height: 54px; padding: .22rem .25rem; border-radius: 6px; }
+  .day-num { font-size: .7rem; margin-bottom: .2rem; }
+  .cal-evento { font-size: .56rem; padding: .07rem .2rem; }
+  .cal-header-day { font-size: .6rem; padding: .32rem 0; }
+  .cal-day.hoy .day-num { width: 19px; height: 19px; font-size: .66rem; }
 
-  /* Semanal: scroll horizontal */
-  .cal-semanal { overflow-x: auto; }
-  .sem-header-row, .sem-body-row { min-width: 480px; }
+  /* Semanal scroll */
+  .cal-semanal { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Filtros scroll */
+  .filtros-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .25rem; -webkit-overflow-scrolling: touch; gap: .35rem; }
+  .filtros-bar::-webkit-scrollbar { display: none; }
+  .filtro-chip { flex-shrink: 0; font-size: .72rem; padding: .24rem .65rem; }
 
   /* Banner hoy */
-  .banner-hoy { padding: .6rem .75rem; }
-  .banner-hoy-title { font-size: .78rem; }
-  .banner-item { font-size: .72rem; padding: .22rem .6rem; }
+  .banner-hoy { padding: .55rem .7rem; }
+  .banner-hoy-title { font-size: .76rem; }
+  .banner-item { font-size: .7rem; padding: .2rem .55rem; }
 
-  /* Filtros: scroll horizontal */
-  .filtros-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .2rem; -webkit-overflow-scrolling: touch; }
-  .filtros-bar::-webkit-scrollbar { display: none; }
-  .filtro-chip { flex-shrink: 0; }
-
-  /* Modal full-screen en mobile */
+  /* Modal desde abajo */
   .modal-overlay { padding: 0; align-items: flex-end; }
-  .modal { border-radius: 16px 16px 0 0; max-height: 92dvh; max-width: 100%; }
+  .modal { border-radius: 16px 16px 0 0; max-height: 93dvh; max-width: 100%; }
 
   /* Bottom nav */
   .bottom-nav { display: flex; }
+  .content-split { padding-bottom: 64px; }
+  .toast { bottom: 5.2rem; }
 }
 
-/* ── Nav inferior mobile ── */
+/* ── Bottom Nav ── */
 .bottom-nav {
-  display: none;
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
   background: var(--surface); border-top: 1px solid var(--border);
-  padding: .4rem 0 calc(.4rem + env(safe-area-inset-bottom));
-  box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+  padding: .35rem 0 calc(.35rem + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 14px rgba(0,0,0,.08);
 }
 .bottom-nav-item {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: .2rem;
-  padding: .35rem .5rem; cursor: pointer; color: var(--text2);
-  font-size: .6rem; font-weight: 500; transition: color .16s; background: none; border: none;
-  font-family: 'Outfit', sans-serif;
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: .18rem;
+  padding: .3rem .4rem; cursor: pointer; color: var(--text2);
+  font-size: .58rem; font-weight: 500; transition: color .16s;
+  background: none; border: none; font-family: 'Outfit', sans-serif;
 }
-.bottom-nav-item .bnav-icon { font-size: 1.2rem; }
-.bottom-nav-item.active, .bottom-nav-item:hover { color: var(--salon); }
+.bottom-nav-item .bnav-icon {
+  font-size: 1.1rem; line-height: 1; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px; transition: all .16s;
+}
+.bottom-nav-item.active .bnav-icon { background: rgba(79,110,247,.12); color: var(--salon); }
+.bottom-nav-item.active { color: var(--salon); }
+.bottom-nav-item:hover { color: var(--salon); }
 
-/* Padding para no tapar contenido con bottom nav */
-@media (max-width: 640px) {
-  .content-split { padding-bottom: 60px; }
-  .toast { bottom: 5rem; }
+/* ── Nueva reserva FAB (mobile) ── */
+.fab-nueva {
+  display: none; position: fixed; bottom: 72px; right: 1rem; z-index: 210;
+  width: 50px; height: 50px; border-radius: 50%;
+  background: var(--salon); color: #fff; border: none;
+  font-size: 1.5rem; cursor: pointer; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(79,110,247,.45); transition: all .18s;
 }
+.fab-nueva:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(79,110,247,.55); }
+@media (max-width: 640px) { .fab-nueva { display: flex; } }
 
 /* ── Colores por espacio ── */
 :root {
