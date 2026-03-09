@@ -32,6 +32,7 @@ if (USE_PG) {
   });
   pool.on('error', err => console.error('DB pool error:', err.message));
   console.log('Modo: PostgreSQL');
+  console.log('DB URL presente:', !!process.env.DATABASE_URL, '| PUBLIC_URL presente:', !!process.env.DATABASE_PUBLIC_URL);
 } else {
   console.log('Modo: JSON local');
 }
@@ -229,8 +230,14 @@ app.post('/api/auth/register', authLimiter, [
     const rol     = isFirst ? 'admin' : 'staff';
     await pool.query('INSERT INTO usuarios (id,nombre,email,password,rol) VALUES ($1,$2,$3,$4,$5)',
       [id, nombre, email, hash, rol]);
-    req.session.userId = id; req.session.nombre = nombre; req.session.rol = rol;
-    res.json({ ok:true, nombre, rol });
+    req.session.regenerate(err => {
+      if (err) return res.status(500).json({ error: 'Error de sesión' });
+      req.session.userId = id; req.session.nombre = nombre; req.session.rol = rol;
+      req.session.save(saveErr => {
+        if (saveErr) return res.status(500).json({ error: 'Error al guardar sesión' });
+        res.json({ ok:true, nombre, rol });
+      });
+    });
   } catch(e) { console.error(e.message); res.status(500).json({ error: 'Error al registrar' }); }
 });
 
@@ -250,7 +257,10 @@ app.post('/api/auth/login', authLimiter, [
     req.session.regenerate(err => {
       if (err) return res.status(500).json({ error: 'Error de sesión' });
       req.session.userId = user.id; req.session.nombre = user.nombre; req.session.rol = user.rol;
-      res.json({ ok:true, nombre: user.nombre, rol: user.rol });
+      req.session.save(saveErr => {
+        if (saveErr) return res.status(500).json({ error: 'Error al guardar sesión' });
+        res.json({ ok:true, nombre: user.nombre, rol: user.rol });
+      });
     });
   } catch(e) { console.error(e.message); res.status(500).json({ error: 'Error al ingresar' }); }
 });
@@ -261,6 +271,7 @@ app.post('/api/auth/logout', (req, res) => {
 
 app.get('/api/auth/me', (req, res) => {
   if (!USE_PG) return res.json({ ok:true, nombre:'Local', rol:'admin', localMode:true });
+  console.log('[me] sessionID:', req.sessionID, '| userId:', req.session?.userId);
   if (!req.session?.userId) return res.status(401).json({ error: 'No autenticado' });
   res.json({ ok:true, nombre: req.session.nombre, rol: req.session.rol });
 });
