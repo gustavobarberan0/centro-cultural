@@ -32,6 +32,14 @@
     .btn { width: 100%; padding: .75rem; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem; cursor: pointer; transition: opacity .2s; margin-top: .5rem; }
     .btn:hover { opacity: .85; }
     .error { background: rgba(255,107,107,.1); border: 1px solid rgba(255,107,107,.3); color: var(--danger); padding: .6rem .9rem; border-radius: 8px; font-size: .82rem; margin-bottom: 1rem; display: none; }
+  .pass-wrap { position: relative; }
+  .pass-wrap input { padding-right: 2.6rem; }
+  .pass-toggle {
+    position: absolute; right: .65rem; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: #9090A8;
+    padding: .2rem; display: flex; align-items: center; transition: color .18s;
+  }
+  .pass-toggle:hover { color: #E8E8F0; }
   @media (max-width: 480px) {
     .login-wrap { max-width: 100%; }
     .card { padding: 1.4rem 1.1rem; border-radius: 12px; }
@@ -51,14 +59,28 @@
       <div class="tab-content active" id="tabLogin">
         <div class="error" id="loginError"></div>
         <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"></div>
-        <div class="field"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="field"><label>Contraseña</label>
+          <div class="pass-wrap">
+            <input type="password" id="loginPass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+            <button type="button" class="pass-toggle" onclick="togglePass('loginPass',this)" tabindex="-1">
+              <svg id="eye-login" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
         <button class="btn" onclick="doLogin()">Ingresar</button>
       </div>
       <div class="tab-content" id="tabRegister">
         <div class="error" id="registerError"></div>
         <div class="field"><label>Nombre completo</label><input type="text" id="regNombre" placeholder="Tu nombre"></div>
         <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"></div>
-        <div class="field"><label>Contraseña</label><input type="password" id="regPass" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <div class="field"><label>Contraseña</label>
+          <div class="pass-wrap">
+            <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')doRegister()">
+            <button type="button" class="pass-toggle" onclick="togglePass('regPass',this)" tabindex="-1">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
         <button class="btn" onclick="doRegister()">Crear cuenta</button>
       </div>
     </div>
@@ -111,6 +133,15 @@
         window.location.href = '/';
       } catch { showError('registerError', 'Error de conexión'); }
     }
+    function togglePass(id, btn) {
+      const input = document.getElementById(id);
+      const isText = input.type === 'text';
+      input.type = isText ? 'password' : 'text';
+      btn.querySelector('svg').innerHTML = isText
+        ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+        : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    }
+
     // Verificar si ya está logueado
     fetch('/api/auth/me', { credentials:'same-origin' }).then(r => { if (r.ok) window.location.href = '/'; });
   </script>

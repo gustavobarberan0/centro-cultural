@@ -536,3 +536,34 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
   color: var(--text3); margin-top: 1px;
 }
 .detail-icon svg { display: block; }
+
+/* ── Password fields ── */
+.pass-wrap { position: relative; }
+.pass-wrap input { padding-right: 2.6rem !important; }
+.pass-toggle {
+  position: absolute; right: .6rem; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--text3);
+  padding: .2rem; display: flex; align-items: center; transition: color .16s;
+}
+.pass-toggle:hover { color: var(--text2); }
+
+/* ── Field error ── */
+.field-error {
+  background: rgba(239,68,68,.08); border: 1.5px solid rgba(239,68,68,.2);
+  color: var(--danger); padding: .5rem .8rem; border-radius: 7px;
+  font-size: .78rem; margin-bottom: .85rem;
+}
+
+/* ── Change pass button in sidebar ── */
+.btn-change-pass {
+  background: none; border: none; color: var(--sidebar-accent);
+  font-size: .62rem; cursor: pointer; padding: 0; margin-top: .1rem;
+  font-family: 'Outfit', sans-serif; text-decoration: underline;
+  text-underline-offset: 2px; opacity: .8; transition: opacity .16s;
+  display: block;
+}
+.btn-change-pass:hover { opacity: 1; }
+@media (max-width: 900px) {
+  .btn-change-pass { display: none; }
+  .sidebar.drawer-open .btn-change-pass { display: block; }
+}

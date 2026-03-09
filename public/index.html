@@ -57,6 +57,7 @@
       <div class="user-info">
         <div class="user-name" id="userNombre">—</div>
         <div class="user-rol"  id="userRol"></div>
+        <button class="btn-change-pass" onclick="abrirModal('modalMiPass')" title="Cambiar contraseña">Cambiar contraseña</button>
       </div>
     </div>
     <div class="sidebar-logout">
@@ -225,6 +226,77 @@
 
 <!-- DRAWER OVERLAY -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- MODAL CAMBIAR MI CONTRASEÑA -->
+<div class="modal-overlay" id="modalMiPass">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3>Cambiar mi contraseña</h3>
+      <button onclick="cerrarModal('modalMiPass')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="miPassError" class="field-error" style="display:none"></div>
+      <div class="field">
+        <label>Contraseña actual</label>
+        <div class="pass-wrap">
+          <input type="password" id="mpActual" placeholder="Tu contraseña actual">
+          <button type="button" class="pass-toggle" onclick="togglePassMain('mpActual',this)" tabindex="-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Nueva contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="mpNueva" placeholder="Mínimo 6 caracteres">
+          <button type="button" class="pass-toggle" onclick="togglePassMain('mpNueva',this)" tabindex="-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Confirmar nueva contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="mpConfirm" placeholder="Repetí la nueva contraseña">
+          <button type="button" class="pass-toggle" onclick="togglePassMain('mpConfirm',this)" tabindex="-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="cerrarModal('modalMiPass')">Cancelar</button>
+      <button class="btn-primary" onclick="cambiarMiPass()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESETEAR PASS (admin) -->
+<div class="modal-overlay" id="modalResetPass">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3>Resetear contraseña</h3>
+      <button onclick="cerrarModal('modalResetPass')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.82rem;color:var(--text2);margin-bottom:1rem">Establecé una nueva contraseña para <strong id="resetUserNombre"></strong>.</p>
+      <div id="resetPassError" class="field-error" style="display:none"></div>
+      <div class="field">
+        <label>Nueva contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="resetPassNueva" placeholder="Mínimo 6 caracteres">
+          <button type="button" class="pass-toggle" onclick="togglePassMain('resetPassNueva',this)" tabindex="-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="cerrarModal('modalResetPass')">Cancelar</button>
+      <button class="btn-primary" onclick="confirmarResetPass()">Resetear</button>
+    </div>
+  </div>
+</div>
 
 <!-- FAB Nueva Reserva (mobile) -->
 <button class="fab-nueva" onclick="abrirNueva()" title="Nueva reserva">+</button>

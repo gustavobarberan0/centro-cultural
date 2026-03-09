@@ -534,6 +534,7 @@ async function abrirAdmin() {
         <td style="text-align:center">${u.total_reservas}</td>
         <td style="display:flex;gap:.3rem">
           <button class="btn-icon" onclick="cambiarRol('${u.id}','${u.rol==='admin'?'staff':'admin'}')">${u.rol==='admin'?'→ staff':'→ admin'}</button>
+          <button class="btn-icon" onclick="abrirResetPass('${u.id}','${u.nombre}')" title="Resetear contraseña">🔑</button>
           <button class="btn-icon" style="color:var(--danger)" onclick="eliminarUsuario('${u.id}','${u.nombre}')">✕</button>
         </td>
       </tr>`).join('');
@@ -643,6 +644,68 @@ function closeDrawer() {
   overlay.classList.remove('open');
   // On mobile hide sidebar again after close
   if (window.innerWidth <= 640) sidebar.style.display = 'none';
+}
+
+// ── Contraseñas ───────────────────────────────────────────────────────────────
+function togglePassMain(id, btn) {
+  const input = document.getElementById(id);
+  const isText = input.type === 'text';
+  input.type = isText ? 'password' : 'text';
+  btn.querySelector('svg').innerHTML = isText
+    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+}
+
+async function cambiarMiPass() {
+  const actual  = document.getElementById('mpActual').value;
+  const nueva   = document.getElementById('mpNueva').value;
+  const confirm = document.getElementById('mpConfirm').value;
+  const errEl   = document.getElementById('miPassError');
+  errEl.style.display = 'none';
+  if (!actual || !nueva) { errEl.textContent='Completá todos los campos'; errEl.style.display='block'; return; }
+  if (nueva.length < 6)  { errEl.textContent='Mínimo 6 caracteres'; errEl.style.display='block'; return; }
+  if (nueva !== confirm) { errEl.textContent='Las contraseñas no coinciden'; errEl.style.display='block'; return; }
+  try {
+    const r = await fetch('/api/auth/password', {
+      method:'PUT', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ actual, nueva })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error; errEl.style.display='block'; return; }
+    cerrarModal('modalMiPass');
+    document.getElementById('mpActual').value = '';
+    document.getElementById('mpNueva').value  = '';
+    document.getElementById('mpConfirm').value= '';
+    showToast('Contraseña actualizada', 'success');
+  } catch { errEl.textContent='Error de conexión'; errEl.style.display='block'; }
+}
+
+let resetUserId = null;
+function abrirResetPass(id, nombre) {
+  resetUserId = id;
+  document.getElementById('resetUserNombre').textContent = nombre;
+  document.getElementById('resetPassNueva').value = '';
+  document.getElementById('resetPassError').style.display = 'none';
+  abrirModal('modalResetPass');
+}
+
+async function confirmarResetPass() {
+  const nueva  = document.getElementById('resetPassNueva').value;
+  const errEl  = document.getElementById('resetPassError');
+  errEl.style.display = 'none';
+  if (!nueva || nueva.length < 6) { errEl.textContent='Mínimo 6 caracteres'; errEl.style.display='block'; return; }
+  try {
+    const r = await fetch(`/api/admin/usuarios/${resetUserId}/password`, {
+      method:'PUT', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ password: nueva })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error; errEl.style.display='block'; return; }
+    cerrarModal('modalResetPass');
+    showToast('Contraseña reseteada', 'success');
+  } catch { errEl.textContent='Error de conexión'; errEl.style.display='block'; }
 }
 
 function setBottomNav(id) {

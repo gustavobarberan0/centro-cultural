@@ -302,6 +302,37 @@ app.delete('/api/admin/usuarios/:id', requireAdmin, async (req, res) => {
   catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── CONTRASEÑAS ───────────────────────────────────────────────────────────────
+
+// Admin: resetear contraseña de cualquier usuario
+app.put('/api/admin/usuarios/:id/password', requireAdmin, [
+  body('password').isLength({ min:6, max:100 }).withMessage('Mínimo 6 caracteres'),
+], async (req, res) => {
+  if (!validar(req, res)) return;
+  try {
+    const hash = await bcrypt.hash(req.body.password, 12);
+    await pool.query('UPDATE usuarios SET password=$1 WHERE id=$2', [hash, req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Usuario: cambiar su propia contraseña (requiere contraseña actual)
+app.put('/api/auth/password', requireAuth, [
+  body('actual').isLength({ min:1 }).withMessage('Ingresá tu contraseña actual'),
+  body('nueva').isLength({ min:6, max:100 }).withMessage('La nueva contraseña debe tener mínimo 6 caracteres'),
+], async (req, res) => {
+  if (!validar(req, res)) return;
+  try {
+    const result = await pool.query('SELECT password FROM usuarios WHERE id=$1', [req.session.userId]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const valid = await bcrypt.compare(req.body.actual, result.rows[0].password);
+    if (!valid) return res.status(401).json({ error: 'La contraseña actual es incorrecta' });
+    const hash = await bcrypt.hash(req.body.nueva, 12);
+    await pool.query('UPDATE usuarios SET password=$1 WHERE id=$2', [hash, req.session.userId]);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── RESERVAS ───────────────────────────────────────────────────────────────────
 // GET todas (con filtros opcionales: ?mes=2024-03 o ?desde=2024-03-01&hasta=2024-03-31)
 app.get('/api/reservas', requireAuth, async (req, res) => {
