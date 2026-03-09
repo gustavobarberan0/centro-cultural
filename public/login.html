@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingresar — Agenda Cultural</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#0F0F13; --bg2:#16161C; --bg3:#1E1E26;
+      --border:#2A2A36; --text:#E8E8F0; --text2:#9090A8;
+      --accent:#7C6FFF; --danger:#FF6B6B; --success:#51CF66;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .login-wrap { width: 100%; max-width: 420px; }
+    .logo-area { text-align: center; margin-bottom: 2rem; }
+    .logo-area img { height: 70px; object-fit: contain; margin-bottom: .8rem; }
+    .app-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; }
+    .app-sub { font-size: .85rem; color: var(--text2); margin-top: .2rem; }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; }
+    .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .tab { flex: 1; padding: .6rem; background: none; border: none; color: var(--text2); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 500; border-bottom: 2px solid transparent; transition: all .2s; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .field { margin-bottom: 1rem; }
+    label { display: block; font-size: .82rem; color: var(--text2); margin-bottom: .4rem; font-weight: 500; }
+    input { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: .65rem .9rem; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .9rem; outline: none; transition: border-color .2s; }
+    input:focus { border-color: var(--accent); }
+    .btn { width: 100%; padding: .75rem; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem; cursor: pointer; transition: opacity .2s; margin-top: .5rem; }
+    .btn:hover { opacity: .85; }
+    .error { background: rgba(255,107,107,.1); border: 1px solid rgba(255,107,107,.3); color: var(--danger); padding: .6rem .9rem; border-radius: 8px; font-size: .82rem; margin-bottom: 1rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="logo-area" id="logoArea"></div>
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('login')">Ingresar</button>
+        <button class="tab" onclick="switchTab('register')">Registrarse</button>
+      </div>
+      <div class="tab-content active" id="tabLogin">
+        <div class="error" id="loginError"></div>
+        <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@email.com"></div>
+        <div class="field"><label>Contraseña</label><input type="password" id="loginPass" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <button class="btn" onclick="doLogin()">Ingresar</button>
+      </div>
+      <div class="tab-content" id="tabRegister">
+        <div class="error" id="registerError"></div>
+        <div class="field"><label>Nombre completo</label><input type="text" id="regNombre" placeholder="Tu nombre"></div>
+        <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="tu@email.com"></div>
+        <div class="field"><label>Contraseña</label><input type="password" id="regPass" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <button class="btn" onclick="doRegister()">Crear cuenta</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Cargar logo si existe
+    fetch('/api/logo', { credentials: 'same-origin' }).then(r => r.json()).then(d => {
+      if (d.url) {
+        document.getElementById('logoArea').innerHTML =
+          `<img src="${d.url}?t=${Date.now()}" alt="Logo"><div class="app-name">Agenda Cultural</div><div class="app-sub">Centro Cultural Municipal</div>`;
+      } else {
+        document.getElementById('logoArea').innerHTML =
+          `<div class="app-name">Agenda Cultural</div><div class="app-sub">Centro Cultural Municipal</div>`;
+      }
+    }).catch(() => {
+      document.getElementById('logoArea').innerHTML =
+        `<div class="app-name">Agenda Cultural</div><div class="app-sub">Centro Cultural Municipal</div>`;
+    });
+
+    function switchTab(t) {
+      document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', (i===0&&t==='login')||(i===1&&t==='register')));
+      document.getElementById('tabLogin').classList.toggle('active', t==='login');
+      document.getElementById('tabRegister').classList.toggle('active', t==='register');
+    }
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg; el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 4000);
+    }
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPass').value;
+      if (!email || !password) return showError('loginError', 'Completá todos los campos');
+      try {
+        const r = await fetch('/api/auth/login', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,password}) });
+        const d = await r.json();
+        if (!r.ok) return showError('loginError', d.error);
+        window.location.href = '/';
+      } catch { showError('loginError', 'Error de conexión'); }
+    }
+    async function doRegister() {
+      const nombre = document.getElementById('regNombre').value.trim();
+      const email  = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPass').value;
+      if (!nombre || !email || !password) return showError('registerError', 'Completá todos los campos');
+      try {
+        const r = await fetch('/api/auth/register', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nombre,email,password}) });
+        const d = await r.json();
+        if (!r.ok) return showError('registerError', d.error);
+        window.location.href = '/';
+      } catch { showError('registerError', 'Error de conexión'); }
+    }
+    // Verificar si ya está logueado
+    fetch('/api/auth/me', { credentials:'same-origin' }).then(r => { if (r.ok) window.location.href = '/'; });
+  </script>
+</body>
+</html>

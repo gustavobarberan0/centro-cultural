@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda Cultural</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo" id="headerLogo">
+    <div class="header-logo-placeholder">AC</div>
+  </div>
+  <div>
+    <div class="header-title">Agenda Cultural</div>
+    <div class="header-sub">Centro Cultural Municipal</div>
+  </div>
+  <div class="header-spacer"></div>
+  <div class="header-nav" id="headerNav"></div>
+  <div class="header-user">
+    <div class="user-chip">
+      <span id="userNombre">—</span>
+      <span class="rol" id="userRol"></span>
+    </div>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar" id="toolbar">
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="setVista('mensual')">Mes</button>
+    <button class="view-tab" onclick="setVista('semanal')">Semana</button>
+    <button class="view-tab" onclick="setVista('diaria')">Día</button>
+    <button class="view-tab" onclick="setVista('lista')">Lista</button>
+  </div>
+  <div class="nav-fecha">
+    <button onclick="navFecha(-1)">‹</button>
+    <div class="fecha-label" id="fechaLabel">—</div>
+    <button onclick="navFecha(1)">›</button>
+    <button class="nav-btn" onclick="irHoy()" style="font-size:.78rem;padding:.3rem .6rem">Hoy</button>
+  </div>
+  <div class="toolbar-spacer"></div>
+  <div class="filtro-espacio">
+    <button class="filtro-btn todos active" onclick="setFiltro('todos')">Todos</button>
+    <button class="filtro-btn aula1" onclick="setFiltro('aula1')">Aula 1</button>
+    <button class="filtro-btn aula2" onclick="setFiltro('aula2')">Aula 2</button>
+    <button class="filtro-btn cine" onclick="setFiltro('cine')">Cine</button>
+    <button class="filtro-btn conferencias" onclick="setFiltro('conferencias')">Conferencias</button>
+    <button class="filtro-btn ingreso" onclick="setFiltro('ingreso')">Ingreso</button>
+  </div>
+  <button class="btn-nueva" onclick="abrirNueva()">+ Nueva reserva</button>
+</div>
+
+<!-- CALENDARIO -->
+<div class="main">
+  <div class="calendar-wrap" id="calendarWrap"></div>
+</div>
+
+<!-- MODAL RESERVA -->
+<div class="modal-overlay" id="modalReserva">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Nueva reserva</h3>
+      <button onclick="cerrarModal('modalReserva')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="conflictoBox" style="display:none"></div>
+      <div class="field">
+        <label>Espacio</label>
+        <select id="rEspacio" onchange="checkConflictos()">
+          <option value="aula1">Aula 1</option>
+          <option value="aula2">Aula 2</option>
+          <option value="cine">Sala de Cine</option>
+          <option value="conferencias">Sala de Conferencias</option>
+          <option value="ingreso">Ingreso Principal</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Título del evento</label>
+        <input type="text" id="rTitulo" placeholder="Ej: Ensayo de teatro">
+      </div>
+      <div class="field">
+        <label>Solicitante</label>
+        <input type="text" id="rSolicitante" placeholder="Nombre del solicitante">
+      </div>
+      <div class="field">
+        <label>Descripción (opcional)</label>
+        <textarea id="rDescripcion" placeholder="Detalles del evento..."></textarea>
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="rFecha" onchange="checkConflictos()">
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>Hora inicio</label>
+          <input type="time" id="rHoraInicio" onchange="checkConflictos()">
+        </div>
+        <div class="field">
+          <label>Hora fin</label>
+          <input type="time" id="rHoraFin" onchange="checkConflictos()">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="cerrarModal('modalReserva')">Cancelar</button>
+      <button class="btn-primary" onclick="guardarReserva()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modalDetalle">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Detalle de reserva</h3>
+      <button onclick="cerrarModal('modalDetalle')">✕</button>
+    </div>
+    <div class="modal-body" id="detalleBody"></div>
+    <div class="modal-footer" id="detalleFooter"></div>
+  </div>
+</div>
+
+<!-- MODAL ADMIN -->
+<div class="modal-overlay" id="modalAdmin">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <h3>Panel de administración</h3>
+      <button onclick="cerrarModal('modalAdmin')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="admin-wrap" style="padding:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <span style="font-family:Syne,sans-serif;font-weight:700">Usuarios</span>
+          <span style="font-size:.78rem;color:var(--text2)" id="adminSubtitle"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="admin-table" id="adminTable">
+            <thead><tr>
+              <th>Nombre</th><th>Email</th><th>Rol</th><th>Reservas</th><th>Acciones</th>
+            </tr></thead>
+            <tbody id="adminTbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
+          <div style="font-family:Syne,sans-serif;font-weight:700;margin-bottom:.8rem">Logo del sitio</div>
+          <div class="logo-upload-area" id="logoUploadArea">
+            <input type="file" accept="image/*" onchange="subirLogo(this)">
+            <div id="logoPreviewWrap">
+              <p style="font-size:.82rem;color:var(--text2)">Hacé click para subir el escudo / logo<br><span style="font-size:.72rem">PNG, JPG, SVG — máx 2MB</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="cerrarModal('modalAdmin')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
