@@ -497,3 +497,42 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .banner-dot.ingreso      { background: var(--ingreso); }
 .banner-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: .85rem; padding: .2rem; border-radius: 5px; flex-shrink: 0; transition: color .15s; align-self: flex-start; }
 .banner-close:hover { color: var(--danger); }
+
+/* ── Sidebar logout button ── */
+.sidebar-logout {
+  padding: .5rem .7rem .8rem;
+  flex-shrink: 0;
+}
+.btn-logout-full {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .55rem; border-radius: 8px; cursor: pointer;
+  background: rgba(239,68,68,.1); color: #ef6060;
+  border: 1.5px solid rgba(239,68,68,.25);
+  font-family: 'Outfit', sans-serif; font-weight: 600; font-size: .8rem;
+  transition: all .18s;
+}
+.btn-logout-full:hover { background: rgba(239,68,68,.2); border-color: rgba(239,68,68,.4); color: #ef4444; }
+.btn-logout-full svg { flex-shrink: 0; }
+
+/* En sidebar colapsada (tablet) solo mostrar icono */
+@media (max-width: 900px) {
+  .sidebar-logout { padding: .4rem .3rem .6rem; }
+  .btn-logout-full span { display: none; }
+  .btn-logout-full { padding: .5rem; justify-content: center; }
+}
+/* En drawer abierto mostrar texto */
+.sidebar.drawer-open .btn-logout-full span { display: inline; }
+.sidebar.drawer-open .btn-logout-full { justify-content: center; }
+/* En mobile ocultar sidebar-logout (se usa btn-logout-top) */
+@media (max-width: 640px) {
+  .sidebar-logout { display: none; }
+  .sidebar.drawer-open .sidebar-logout { display: block; }
+}
+
+/* ── Detail icon fix ── */
+.detail-icon {
+  width: 18px; flex-shrink: 0; display: flex;
+  align-items: center; justify-content: center;
+  color: var(--text3); margin-top: 1px;
+}
+.detail-icon svg { display: block; }
