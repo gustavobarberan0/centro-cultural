@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Agenda — Centro Cultural</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fraunces:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -215,6 +215,26 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- BOTTOM NAV (mobile only) -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bottom-nav-item active" id="bnav-cal" onclick="setVista('mensual');setBottomNav('bnav-cal')">
+    <span class="bnav-icon">📅</span>Calendario
+  </button>
+  <button class="bottom-nav-item" id="bnav-lista" onclick="setVista('lista');setBottomNav('bnav-lista')">
+    <span class="bnav-icon">📋</span>Reservas
+  </button>
+  <button class="bottom-nav-item" id="bnav-nueva" onclick="abrirNueva()">
+    <span class="bnav-icon">➕</span>Nueva
+  </button>
+  <button class="bottom-nav-item" id="bnav-hoy" onclick="irHoy();setVista('diaria');setBottomNav('bnav-hoy')">
+    <span class="bnav-icon">🔍</span>Hoy
+  </button>
+  <button class="bottom-nav-item" id="bnav-admin" onclick="abrirAdmin()" style="display:none">
+    <span class="bnav-icon">⚙️</span>Admin
+  </button>
+</nav>
+
 <script src="/js/app.js"></script>
 </body>
 </html>

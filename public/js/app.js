@@ -18,6 +18,70 @@ const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES      = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+// ── Banner eventos de hoy ──────────────────────────────────────────────────────
+function mostrarBannerHoy() {
+  const hoyStr   = fmtDate(state.hoy);
+  const eventosHoy = state.reservas.filter(r => {
+    const f = r.fecha instanceof Date ? fmtDate(r.fecha) : r.fecha?.slice(0,10);
+    return f === hoyStr;
+  }).sort((a,b) => (a.hora_inicio||'').localeCompare(b.hora_inicio||''));
+
+  // Remover banner anterior si existe
+  const existing = document.getElementById('bannerHoy');
+  if (existing) existing.remove();
+  if (!eventosHoy.length) return;
+
+  const nombres = {
+    aula1:'Aula 1', aula2:'Aula 2', cine:'Sala de Cine',
+    conferencias:'Sala de Conferencias', ingreso:'Salón de Ingreso'
+  };
+  const colores = {
+    aula1:'#4F6EF7', aula2:'#9D5CFF', cine:'#F7604F',
+    conferencias:'#20C997', ingreso:'#F59E0B'
+  };
+
+  const items = eventosHoy.slice(0,4).map(ev => {
+    const hi = (ev.hora_inicio||'').slice(0,5);
+    const hf = (ev.hora_fin||'').slice(0,5);
+    const col = colores[ev.espacio] || '#4F6EF7';
+    const esp = nombres[ev.espacio] || ev.espacio;
+    return `<div style="display:flex;align-items:center;gap:.5rem;padding:.35rem .5rem;background:rgba(255,255,255,.07);border-radius:6px;cursor:pointer" onclick="seleccionarReserva('${ev.id}')">
+      <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></span>
+      <span style="font-weight:600;font-size:.8rem">${ev.titulo}</span>
+      <span style="font-size:.75rem;opacity:.75">${esp}</span>
+      <span style="margin-left:auto;font-size:.75rem;opacity:.75;white-space:nowrap">${hi}–${hf}</span>
+    </div>`;
+  }).join('');
+
+  const mas = eventosHoy.length > 4
+    ? `<div style="font-size:.72rem;opacity:.6;text-align:center;padding:.2rem 0">+${eventosHoy.length-4} más</div>` : '';
+
+  const banner = document.createElement('div');
+  banner.id = 'bannerHoy';
+  banner.style.cssText = `
+    position:fixed; bottom:1.2rem; left:230px; right:310px;
+    background:linear-gradient(135deg,#1C2340,#2E3A63);
+    border:1px solid rgba(79,110,247,.4); border-radius:12px;
+    padding:.75rem 1rem; z-index:50; box-shadow:0 4px 20px rgba(0,0,0,.25);
+    animation: slideUp .3s ease;
+  `;
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <span style="font-size:1rem">📅</span>
+        <span style="font-weight:700;font-size:.85rem;color:#fff">Hoy — ${eventosHoy.length} evento${eventosHoy.length!==1?'s':''} programado${eventosHoy.length!==1?'s':''}</span>
+      </div>
+      <button onclick="document.getElementById('bannerHoy').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:.9rem;padding:.1rem .3rem">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.3rem;color:#fff">${items}${mas}</div>
+  `;
+  document.body.appendChild(banner);
+
+  // Auto-ocultar después de 10 segundos
+  setTimeout(() => { if(document.getElementById('bannerHoy')) document.getElementById('bannerHoy').remove(); }, 10000);
+}
+
+
 // ── Init ───────────────────────────────────────────────────────────────────────
 async function init() {
   try {
@@ -30,11 +94,16 @@ async function init() {
     document.getElementById('userNombre').textContent = d.nombre;
     document.getElementById('userRol').textContent    = d.rol === 'admin' ? 'Administrador' : 'Personal';
     document.getElementById('userAvatar').textContent = d.nombre.charAt(0).toUpperCase();
-    if (d.rol === 'admin') document.getElementById('navAdmin').style.display = 'flex';
+    if (d.rol === 'admin') {
+      document.getElementById('navAdmin').style.display = 'flex';
+      const bnavAdmin = document.getElementById('bnav-admin');
+      if (bnavAdmin) bnavAdmin.style.display = 'flex';
+    }
 
     await cargarLogo();
     await cargarReservas();
     actualizarStats();
+    mostrarBannerHoy();
     renderCalendario();
   } catch { window.location.href = '/login.html'; }
 }
@@ -47,7 +116,7 @@ async function cargarLogo() {
     if (d.url) {
       const url = d.url + '?t=' + Date.now();
       document.getElementById('sidebarLogo').innerHTML =
-        `<img class="sidebar-logo-img" src="${url}" alt="Logo">
+        `<img class="sidebar-logo-img" src="${url}" alt="Logo" style="width:56px;height:56px;border-radius:10px">
          <div><div class="sidebar-app-name">Centro Cultural</div><div class="sidebar-app-sub">Sistema de Reservas</div></div>`;
     }
   } catch {}
@@ -87,7 +156,7 @@ function filtrarReservas(rs) {
 
 function actualizarStats() {
   const hoyStr = fmtDate(state.hoy);
-  const hoy    = state.reservas.filter(r => r.fecha === hoyStr).length;
+  const hoy    = state.reservas.filter(r => normFecha(r.fecha) === hoyStr).length;
   document.getElementById('statHoy').textContent = hoy;
 }
 
@@ -104,6 +173,9 @@ function setVista(v) {
   document.getElementById('topbarTitle').textContent =
     v === 'mensual' ? 'Calendario' : v === 'semanal' ? 'Semana' : v === 'diaria' ? 'Día' : 'Todas las Reservas';
   cargarReservas().then(() => { actualizarStats(); renderCalendario(); });
+  // Sync bottom nav
+  const map = { mensual:'bnav-cal', semanal:'bnav-cal', diaria:'bnav-hoy', lista:'bnav-lista' };
+  if (map[v]) setBottomNav(map[v]);
 }
 
 function navFecha(dir) {
@@ -164,7 +236,7 @@ function renderMensual(wrap) {
 
   const reservas = filtrarReservas(state.reservas);
   const porDia   = {};
-  for (const r of reservas) { if (!porDia[r.fecha]) porDia[r.fecha]=[]; porDia[r.fecha].push(r); }
+  for (const r of reservas) { const rf = normFecha(r.fecha); if (!porDia[rf]) porDia[rf]=[]; r._fecha = rf; porDia[r._fecha || normFecha(r.fecha)].push(r); }
 
   let html = '<div class="cal-mensual">';
   for (const d of ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'])
@@ -217,7 +289,7 @@ function renderSemanal(wrap) {
   html += '<div style="margin-left:46px;display:grid;grid-template-columns:repeat(7,1fr)">';
   dias.forEach((d,di) => {
     const ds  = fmtDate(d);
-    const evs = reservas.filter(r => r.fecha===ds);
+    const evs = reservas.filter(r => normFecha(r.fecha)===ds);
     html += `<div class="sem-col" onclick="clickDia('${ds}')">`;
     HORAS.forEach(() => html += '<div class="sem-slot"></div>');
     evs.forEach(ev => {
@@ -264,7 +336,7 @@ function renderLista(wrap) {
   const rs = filtrarReservas(state.reservas).sort((a,b)=>a.fecha.localeCompare(b.fecha)||a.hora_inicio.localeCompare(b.hora_inicio));
   if (!rs.length) { wrap.innerHTML = '<div class="cal-lista"><div class="lista-vacia">No hay reservas en este período</div></div>'; return; }
   const grupos = {};
-  rs.forEach(r => { if (!grupos[r.fecha]) grupos[r.fecha]=[]; grupos[r.fecha].push(r); });
+  rs.forEach(r => { const fd=normFecha(r.fecha); if (!grupos[fd]) grupos[fd]=[]; grupos[fd].push(r); });
   let html = '<div class="cal-lista">';
   Object.keys(grupos).sort().forEach(fecha => {
     const d = new Date(fecha+'T12:00:00');
@@ -515,8 +587,27 @@ async function logout() {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function abrirModal(id)  { document.getElementById(id).classList.add('open'); }
 function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
-function fmtDate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-function formatFechaLarga(ds) { const d=new Date(ds+'T12:00:00'); return `${DIAS_LARGO[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} ${d.getFullYear()}`; }
+function fmtDate(d) {
+  if (typeof d === 'string') { return d.slice(0,10); }
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatFechaLarga(ds) {
+  if (!ds) return '—';
+  // Normaliza cualquier formato: Date, '2026-03-09', '2026-03-09T00:00:00.000Z'
+  const str = (ds instanceof Date) ? ds.toISOString() : String(ds);
+  const parts = str.slice(0,10).split('-');
+  if (parts.length !== 3) return ds;
+  const year = parseInt(parts[0]), month = parseInt(parts[1])-1, day = parseInt(parts[2]);
+  const d = new Date(year, month, day);
+  return `${DIAS_LARGO[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// Normaliza fecha a string YYYY-MM-DD desde cualquier formato PG
+function normFecha(ds) {
+  if (!ds) return '';
+  const str = (ds instanceof Date) ? ds.toISOString() : String(ds);
+  return str.slice(0, 10);
+}
 function showToast(msg, type='success') {
   const t=document.getElementById('toast');
   t.textContent=msg; t.className=`toast ${type} show`;
@@ -529,5 +620,10 @@ document.addEventListener('keydown', e => {
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if(e.target===o) cerrarModal(o.id); });
 });
+
+function setBottomNav(id) {
+  document.querySelectorAll('.bottom-nav-item').forEach(el =>
+    el.classList.toggle('active', el.id === id));
+}
 
 init();

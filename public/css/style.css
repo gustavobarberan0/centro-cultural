@@ -235,12 +235,96 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════ */
+
+/* ── Tablet (≤900px) ── */
 @media (max-width: 900px) {
-  .sidebar { width: 54px; }
-  .sidebar-app-name, .sidebar-app-sub, .sidebar-logo img + div,
-  .nav-item span, .sidebar-stats, .user-info, .nav-section-label { display: none; }
-  .detail-panel { display: none; }
+  .sidebar { width: 56px; }
+  .sidebar-app-name, .sidebar-app-sub,
+  .nav-item span, .sidebar-stats,
+  .user-info, .nav-section-label { display: none; }
   .nav-item { justify-content: center; padding: .55rem; margin: .08rem .3rem; }
+  .sidebar-logo { padding: .7rem .5rem; justify-content: center; }
+  .sidebar-logo > div:last-child { display: none; }
+  .sidebar-user { justify-content: center; padding: .6rem .3rem; }
+  .detail-panel { width: 260px; }
+  .fecha-label { min-width: 120px; font-size: .82rem; }
+  .topbar { gap: .5rem; }
+}
+
+/* ── Mobile (≤640px) ── */
+@media (max-width: 640px) {
+  /* Esconder sidebar — usamos nav bottom */
+  .sidebar { display: none; }
+  .detail-panel { display: none; }
+
+  .main-area { height: 100dvh; }
+
+  /* Topbar compacto */
+  .topbar { padding: .5rem .75rem; flex-wrap: nowrap; gap: .4rem; overflow-x: auto; }
+  .topbar-titles { display: none; }
+  .view-tabs { display: none; }
+  .btn-nueva-reserva span { display: none; }
+  .btn-nueva-reserva { padding: .42rem .65rem; font-size: .85rem; }
+  .fecha-label { min-width: 100px; font-size: .8rem; }
+  .nav-fecha button { width: 26px; height: 26px; }
+
+  /* Calendar area */
+  .calendar-area { padding: .6rem .5rem; }
+  .content-split { flex-direction: column; }
+
+  /* Mensual: días más compactos */
+  .cal-mensual { gap: 2px; }
+  .cal-day { min-height: 56px; padding: .25rem .28rem; border-radius: 7px; }
+  .day-num { font-size: .72rem; }
+  .cal-evento { font-size: .58rem; padding: .08rem .22rem; }
+  .cal-header-day { font-size: .62rem; padding: .35rem 0; }
+
+  /* Semanal: scroll horizontal */
+  .cal-semanal { overflow-x: auto; }
+  .sem-header-row, .sem-body-row { min-width: 480px; }
+
+  /* Banner hoy */
+  .banner-hoy { padding: .6rem .75rem; }
+  .banner-hoy-title { font-size: .78rem; }
+  .banner-item { font-size: .72rem; padding: .22rem .6rem; }
+
+  /* Filtros: scroll horizontal */
+  .filtros-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .2rem; -webkit-overflow-scrolling: touch; }
+  .filtros-bar::-webkit-scrollbar { display: none; }
+  .filtro-chip { flex-shrink: 0; }
+
+  /* Modal full-screen en mobile */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal { border-radius: 16px 16px 0 0; max-height: 92dvh; max-width: 100%; }
+
+  /* Bottom nav */
+  .bottom-nav { display: flex; }
+}
+
+/* ── Nav inferior mobile ── */
+.bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: .4rem 0 calc(.4rem + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+}
+.bottom-nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: .2rem;
+  padding: .35rem .5rem; cursor: pointer; color: var(--text2);
+  font-size: .6rem; font-weight: 500; transition: color .16s; background: none; border: none;
+  font-family: 'Outfit', sans-serif;
+}
+.bottom-nav-item .bnav-icon { font-size: 1.2rem; }
+.bottom-nav-item.active, .bottom-nav-item:hover { color: var(--salon); }
+
+/* Padding para no tapar contenido con bottom nav */
+@media (max-width: 640px) {
+  .content-split { padding-bottom: 60px; }
+  .toast { bottom: 5rem; }
 }
 
 /* ── Colores por espacio ── */
@@ -303,3 +387,52 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .detail-espacio-badge.conferencias .dot { background: var(--conferencias); }
 .detail-espacio-badge.ingreso      { background: rgba(245,158,11,.1);  color: #b45309; }
 .detail-espacio-badge.ingreso .dot { background: var(--ingreso); }
+
+/* ── Banner hoy ── */
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* Logo más grande en sidebar */
+.sidebar-logo { padding: 1rem; min-height: 72px; }
+.sidebar-logo-img     { width: 56px !important; height: 56px !important; border-radius: 10px !important; }
+.sidebar-logo-placeholder { width: 56px !important; height: 56px !important; border-radius: 10px !important; font-size: 1.2rem !important; }
+
+/* ── Logo más grande ── */
+.sidebar-logo-img { width: 57px !important; height: 57px !important; }
+.sidebar-logo-placeholder { width: 57px !important; height: 57px !important; font-size: 1.3rem !important; }
+
+/* ── Banner de hoy ── */
+.banner-hoy {
+  background: linear-gradient(135deg, rgba(79,110,247,.08) 0%, rgba(79,110,247,.04) 100%);
+  border: 1.5px solid rgba(79,110,247,.2);
+  border-radius: var(--radius); padding: .75rem 1rem;
+  margin-bottom: .85rem; display: flex; align-items: flex-start;
+  gap: .75rem; animation: bannerSlide .35s ease;
+}
+@keyframes bannerSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.banner-hoy-inner { flex: 1; }
+.banner-hoy-title { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; font-size: .82rem; flex-wrap: wrap; }
+.banner-hoy-icon  { font-size: 1rem; }
+.banner-hoy-count { background: var(--salon); color: #fff; font-size: .67rem; font-weight: 700; padding: .1rem .5rem; border-radius: 20px; }
+.banner-hoy-eventos { display: flex; flex-wrap: wrap; gap: .4rem; }
+.banner-item {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: .25rem .7rem; font-size: .76rem;
+  cursor: pointer; transition: all .16s;
+}
+.banner-item:hover { border-color: var(--salon); background: rgba(79,110,247,.05); }
+.banner-item em { font-style: normal; color: var(--text2); }
+.banner-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.banner-dot.aula1        { background: var(--aula1); }
+.banner-dot.aula2        { background: var(--aula2); }
+.banner-dot.cine         { background: var(--cine); }
+.banner-dot.conferencias { background: var(--conferencias); }
+.banner-dot.ingreso      { background: var(--ingreso); }
+.banner-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: .85rem; padding: .2rem; border-radius: 5px; flex-shrink: 0; transition: color .15s; align-self: flex-start; }
+.banner-close:hover { color: var(--danger); }
