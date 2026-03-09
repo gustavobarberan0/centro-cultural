@@ -13,7 +13,7 @@ const state = {
   conflictoTimeout: null,
 };
 
-const ESPACIOS   = { salon: 'Salón Principal', aula: 'Aula / Taller' };
+const ESPACIOS = { aula1: 'Aula 1', aula2: 'Aula 2', cine: 'Sala de Cine', conferencias: 'Sala de Conferencias', ingreso: 'Salón de Ingreso' };
 const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES      = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -340,7 +340,7 @@ function seleccionarReserva(id) {
 function abrirNueva(fecha=null, hi='08:00', hf='10:00') {
   state.editandoId = null;
   document.getElementById('modalTitle').textContent = 'Nueva reserva';
-  document.getElementById('rEspacio').value   = 'salon';
+  document.getElementById('rEspacio').value = 'aula1';
   document.getElementById('rTitulo').value    = '';
   document.getElementById('rSolicitante').value='';
   document.getElementById('rDescripcion').value='';

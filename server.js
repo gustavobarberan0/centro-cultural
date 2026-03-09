@@ -16,14 +16,15 @@ const multer       = require('multer');
 
 const app     = express();
 const PORT    = process.env.PORT || 3000;
-const USE_PG  = !!process.env.DATABASE_URL;
-const IS_PROD = !!process.env.DATABASE_URL;
+const DB_URL  = process.env.DATABASE_URL || process.env.DATABASE_PUBLIC_URL;
+const USE_PG  = !!DB_URL;
+const IS_PROD = !!DB_URL;
 
 // ── PostgreSQL ─────────────────────────────────────────────────────────────────
 let pool = null;
 if (USE_PG) {
   pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: DB_URL,
     ssl: { rejectUnauthorized: false },
     max: 10,
     idleTimeoutMillis: 30000,

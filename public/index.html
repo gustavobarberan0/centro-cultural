@@ -48,7 +48,7 @@
       <div class="stat-card">
         <div class="stat-label">Espacios Disponibles</div>
         <div class="stat-val" id="statEspacios">2</div>
-        <div class="stat-sub">Salón Principal · Aula/Taller</div>
+        <div class="stat-sub">Aula 1 · Aula 2 · Cine · Conf. · Ingreso</div>
       </div>
     </div>
 
@@ -93,11 +93,20 @@
           <div class="filtro-chip todos active" onclick="setFiltro('todos')">
             <span class="dot" style="background:#4F6EF7"></span>Todos
           </div>
-          <div class="filtro-chip salon" onclick="setFiltro('salon')">
-            <span class="dot" style="background:#4F6EF7"></span>Salón Principal
+          <div class="filtro-chip aula1" onclick="setFiltro('aula1')">
+            <span class="dot" style="background:#4F6EF7"></span>Aula 1
           </div>
-          <div class="filtro-chip aula" onclick="setFiltro('aula')">
-            <span class="dot" style="background:#F7604F"></span>Aula / Taller
+          <div class="filtro-chip aula2" onclick="setFiltro('aula2')">
+            <span class="dot" style="background:#9D5CFF"></span>Aula 2
+          </div>
+          <div class="filtro-chip cine" onclick="setFiltro('cine')">
+            <span class="dot" style="background:#F7604F"></span>Sala de Cine
+          </div>
+          <div class="filtro-chip conferencias" onclick="setFiltro('conferencias')">
+            <span class="dot" style="background:#20C997"></span>Conferencias
+          </div>
+          <div class="filtro-chip ingreso" onclick="setFiltro('ingreso')">
+            <span class="dot" style="background:#FFD43B"></span>Salón Ingreso
           </div>
         </div>
         <div id="calendarWrap"></div>
@@ -130,8 +139,11 @@
       <div class="field">
         <label>Espacio</label>
         <select id="rEspacio" onchange="checkConflictos()">
-          <option value="salon">Salón Principal</option>
-          <option value="aula">Aula / Taller</option>
+          <option value="aula1">Aula 1</option>
+          <option value="aula2">Aula 2</option>
+          <option value="cine">Sala de Cine</option>
+          <option value="conferencias">Sala de Conferencias</option>
+          <option value="ingreso">Salón de Ingreso</option>
         </select>
       </div>
       <div class="field">
