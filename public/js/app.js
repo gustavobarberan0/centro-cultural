@@ -51,8 +51,8 @@ function mostrarBannerHoy() {
 
   // Posición responsive
   const pos = isMobile
-    ? 'left:.75rem; right:.75rem; bottom:80px;'
-    : 'left:236px; right:1.2rem; bottom:1.2rem;';
+    ? 'left:.75rem; right:4rem; bottom:82px;'   /* deja espacio al FAB */
+    : 'left:236px; right:306px; bottom:1.2rem;'; /* desktop: entre sidebar y panel */
 
   const banner = document.createElement('div');
   banner.id = 'bannerHoy';
