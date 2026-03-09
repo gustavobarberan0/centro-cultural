@@ -20,65 +20,64 @@ const MESES      = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Ag
 
 // ── Banner eventos de hoy ──────────────────────────────────────────────────────
 function mostrarBannerHoy() {
-  const hoyStr   = fmtDate(state.hoy);
+  const hoyStr = fmtDate(state.hoy);
   const eventosHoy = state.reservas.filter(r => {
     const f = r.fecha instanceof Date ? fmtDate(r.fecha) : r.fecha?.slice(0,10);
     return f === hoyStr;
   }).sort((a,b) => (a.hora_inicio||'').localeCompare(b.hora_inicio||''));
 
-  // Remover banner anterior si existe
   const existing = document.getElementById('bannerHoy');
   if (existing) existing.remove();
   if (!eventosHoy.length) return;
 
-  const nombres = {
-    aula1:'Aula 1', aula2:'Aula 2', cine:'Sala de Cine',
-    conferencias:'Sala de Conferencias', ingreso:'Salón de Ingreso'
-  };
-  const colores = {
-    aula1:'#4F6EF7', aula2:'#9D5CFF', cine:'#F7604F',
-    conferencias:'#20C997', ingreso:'#F59E0B'
-  };
+  const colores = { aula1:'#4F6EF7', aula2:'#9D5CFF', cine:'#F7604F', conferencias:'#20C997', ingreso:'#F59E0B' };
+  const isMobile = window.innerWidth <= 640;
 
-  const items = eventosHoy.slice(0,4).map(ev => {
-    const hi = (ev.hora_inicio||'').slice(0,5);
-    const hf = (ev.hora_fin||'').slice(0,5);
+  const items = eventosHoy.slice(0, isMobile ? 3 : 4).map(ev => {
+    const hi  = (ev.hora_inicio||'').slice(0,5);
+    const hf  = (ev.hora_fin||'').slice(0,5);
     const col = colores[ev.espacio] || '#4F6EF7';
-    const esp = nombres[ev.espacio] || ev.espacio;
-    return `<div style="display:flex;align-items:center;gap:.5rem;padding:.35rem .5rem;background:rgba(255,255,255,.07);border-radius:6px;cursor:pointer" onclick="seleccionarReserva('${ev.id}')">
-      <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></span>
-      <span style="font-weight:600;font-size:.8rem">${ev.titulo}</span>
-      <span style="font-size:.75rem;opacity:.75">${esp}</span>
-      <span style="margin-left:auto;font-size:.75rem;opacity:.75;white-space:nowrap">${hi}–${hf}</span>
+    const esp = ESPACIOS[ev.espacio] || ev.espacio;
+    return `<div style="display:flex;align-items:center;gap:.45rem;padding:.3rem .45rem;background:rgba(255,255,255,.08);border-radius:6px;cursor:pointer;min-width:0" onclick="seleccionarReserva('${ev.id}')">
+      <span style="width:7px;height:7px;border-radius:50%;background:${col};flex-shrink:0"></span>
+      <span style="font-weight:600;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${ev.titulo}</span>
+      ${isMobile ? '' : `<span style="font-size:.72rem;opacity:.7;white-space:nowrap">${esp}</span>`}
+      <span style="font-size:.72rem;opacity:.75;white-space:nowrap;flex-shrink:0">${hi}–${hf}</span>
     </div>`;
   }).join('');
 
-  const mas = eventosHoy.length > 4
-    ? `<div style="font-size:.72rem;opacity:.6;text-align:center;padding:.2rem 0">+${eventosHoy.length-4} más</div>` : '';
+  const mas = eventosHoy.length > (isMobile ? 3 : 4)
+    ? `<div style="font-size:.7rem;opacity:.6;text-align:center;padding:.15rem 0">+${eventosHoy.length - (isMobile?3:4)} más</div>` : '';
+
+  // Posición responsive
+  const pos = isMobile
+    ? 'left:.75rem; right:.75rem; bottom:80px;'
+    : 'left:236px; right:1.2rem; bottom:1.2rem;';
 
   const banner = document.createElement('div');
   banner.id = 'bannerHoy';
   banner.style.cssText = `
-    position:fixed; bottom:1.2rem; left:230px; right:310px;
-    background:linear-gradient(135deg,#1C2340,#2E3A63);
+    position:fixed; ${pos}
+    background:linear-gradient(135deg,#1C2340ee,#2E3A63ee);
     border:1px solid rgba(79,110,247,.4); border-radius:12px;
-    padding:.75rem 1rem; z-index:50; box-shadow:0 4px 20px rgba(0,0,0,.25);
-    animation: slideUp .3s ease;
+    padding:.65rem .85rem; z-index:150;
+    box-shadow:0 4px 20px rgba(0,0,0,.3);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
   `;
   banner.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
-      <div style="display:flex;align-items:center;gap:.5rem">
-        <span style="font-size:1rem">📅</span>
-        <span style="font-weight:700;font-size:.85rem;color:#fff">Hoy — ${eventosHoy.length} evento${eventosHoy.length!==1?'s':''} programado${eventosHoy.length!==1?'s':''}</span>
-      </div>
-      <button onclick="document.getElementById('bannerHoy').remove()" style="background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:.9rem;padding:.1rem .3rem">✕</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;gap:.5rem">
+      <span style="font-weight:700;font-size:.8rem;color:#fff;white-space:nowrap">
+        Hoy · ${eventosHoy.length} evento${eventosHoy.length!==1?'s':''}
+      </span>
+      <button onclick="document.getElementById('bannerHoy').remove()"
+        style="background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:.85rem;padding:.1rem .25rem;flex-shrink:0;line-height:1">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:.3rem;color:#fff">${items}${mas}</div>
+    <div style="display:flex;flex-direction:column;gap:.25rem;color:#fff">${items}${mas}</div>
   `;
   document.body.appendChild(banner);
 
-  // Auto-ocultar después de 10 segundos
-  setTimeout(() => { if(document.getElementById('bannerHoy')) document.getElementById('bannerHoy').remove(); }, 10000);
+  setTimeout(() => { if(document.getElementById('bannerHoy')) document.getElementById('bannerHoy').remove(); }, 12000);
 }
 
 
