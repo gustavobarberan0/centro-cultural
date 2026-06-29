@@ -13,7 +13,7 @@ const state = {
   conflictoTimeout: null,
 };
 
-const ESPACIOS = { aula1: 'Aula 1', aula2: 'Aula 2', cine: 'Sala de Cine', conferencias: 'Sala de Conferencias', ingreso: 'Salón de Ingreso' };
+const ESPACIOS = { aula1: 'Aula 1', aula2: 'Aula 2', cine: 'Sala de Cine', conferencias: 'Sala de Conferencias', ingreso: 'Salón de Ingreso', puntodigital1: 'Punto Digital 1', puntodigital2: 'Punto Digital 2' };
 const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES      = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -30,7 +30,7 @@ function mostrarBannerHoy() {
   if (existing) existing.remove();
   if (!eventosHoy.length) return;
 
-  const colores = { aula1:'#4F6EF7', aula2:'#9D5CFF', cine:'#F7604F', conferencias:'#20C997', ingreso:'#F59E0B' };
+  const colores = { aula1:'#4F6EF7', aula2:'#9D5CFF', cine:'#F7604F', conferencias:'#20C997', ingreso:'#F59E0B', puntodigital1:'#00B8D9', puntodigital2:'#0747A6' };
   const isMobile = window.innerWidth <= 640;
 
   const items = eventosHoy.slice(0, isMobile ? 3 : 4).map(ev => {
@@ -110,18 +110,10 @@ async function init() {
 }
 
 // ── Logo ───────────────────────────────────────────────────────────────────────
-async function cargarLogo() {
-  try {
-    const r = await fetch('/api/logo', { credentials: 'same-origin' });
-    const d = await r.json();
-    if (d.url) {
-      const url = d.url + '?t=' + Date.now();
-      document.getElementById('sidebarLogo').innerHTML =
-        `<img class="sidebar-logo-img" src="${url}" alt="Logo" style="width:56px;height:56px;border-radius:10px">
-         <div><div class="sidebar-app-name">Centro Cultural</div><div class="sidebar-app-sub">Sistema de Reservas</div></div>`;
-    }
-  } catch {}
-}
+// El logo institucional está embebido directamente en index.html (base64) para
+// evitar que se pierda cuando el hosting gratuito (Render) suspende el servicio
+// y reinicia el filesystem. Esta función queda como no-op por compatibilidad.
+async function cargarLogo() {}
 
 // ── Reservas ───────────────────────────────────────────────────────────────────
 async function cargarReservas() {
@@ -521,7 +513,6 @@ async function confirmarEliminar(id) {
 // ── Admin ──────────────────────────────────────────────────────────────────────
 async function abrirAdmin() {
   abrirModal('modalAdmin');
-  await cargarLogoAdmin();
   try {
     const r = await fetch('/api/admin/usuarios',{credentials:'same-origin'});
     const us = await r.json();
@@ -539,28 +530,6 @@ async function abrirAdmin() {
         </td>
       </tr>`).join('');
   } catch {}
-}
-
-async function cargarLogoAdmin() {
-  try {
-    const r = await fetch('/api/logo',{credentials:'same-origin'});
-    const d = await r.json();
-    const w = document.getElementById('logoPreviewWrap');
-    if (d.url) w.innerHTML=`<img class="logo-preview" src="${d.url}?t=${Date.now()}"><br><p style="font-size:.7rem;color:var(--text2)">Hacé click para cambiar</p>`;
-    else w.innerHTML=`<p style="font-size:.78rem;color:var(--text2)">Hacé click para subir el escudo / logo<br><span style="font-size:.7rem">PNG, JPG, SVG — máx 2MB</span></p>`;
-  } catch {}
-}
-
-async function subirLogo(input) {
-  if (!input.files[0]) return;
-  const fd = new FormData(); fd.append('logo', input.files[0]);
-  try {
-    const r = await fetch('/api/logo',{method:'POST',credentials:'same-origin',body:fd});
-    const d = await r.json();
-    if (!r.ok) return showToast(d.error||'Error al subir','error');
-    showToast('Logo actualizado','success');
-    await cargarLogo(); await cargarLogoAdmin();
-  } catch { showToast('Error al subir','error'); }
 }
 
 async function cambiarRol(id, rol) {

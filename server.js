@@ -12,7 +12,6 @@ const { body, validationResult } = require('express-validator');
 const cookieParser = require('cookie-parser');
 const fs           = require('fs');
 const crypto       = require('crypto');
-const multer       = require('multer');
 
 const app     = express();
 const PORT    = process.env.PORT || 3000;
@@ -87,20 +86,6 @@ if (USE_PG) {
 app.use(cookieParser());
 app.use(express.json({ limit: '2mb' }));
 app.use(session(sessionConfig));
-
-// ── Multer para logo ───────────────────────────────────────────────────────────
-const logoStorage = multer.diskStorage({
-  destination: path.join(__dirname, 'public', 'uploads'),
-  filename: (req, file, cb) => cb(null, 'logo' + path.extname(file.originalname).toLowerCase()),
-});
-const uploadLogo = multer({
-  storage: logoStorage,
-  limits: { fileSize: 2 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const ok = ['.jpg','.jpeg','.png','.gif','.svg','.webp'];
-    ok.includes(path.extname(file.originalname).toLowerCase()) ? cb(null, true) : cb(new Error('Solo imágenes'));
-  },
-});
 
 // ── Init DB ────────────────────────────────────────────────────────────────────
 async function initDB() {
@@ -189,27 +174,10 @@ async function buscarConflictos(espacio, fecha, horaInicio, horaFin, excludeId =
 }
 
 // ── Static ─────────────────────────────────────────────────────────────────────
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Health ─────────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ ok: true, version: '1.0.0' }));
-
-// ── Logo ───────────────────────────────────────────────────────────────────────
-app.get('/api/logo', requireAuth, (req, res) => {
-  const exts = ['.png','.jpg','.jpeg','.gif','.svg','.webp'];
-  for (const ext of exts) {
-    if (fs.existsSync(path.join(uploadsDir, 'logo' + ext)))
-      return res.json({ url: '/uploads/logo' + ext });
-  }
-  res.json({ url: null });
-});
-
-app.post('/api/logo', requireAdmin, uploadLogo.single('logo'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No se recibió imagen' });
-  res.json({ ok: true, url: '/uploads/' + req.file.filename });
-});
 
 // ── AUTH ───────────────────────────────────────────────────────────────────────
 app.post('/api/auth/register', authLimiter, [
@@ -363,7 +331,7 @@ app.get('/api/reservas', requireAuth, async (req, res) => {
 
 // POST nueva reserva
 app.post('/api/reservas', requireAuth, [
-  body('espacio').isIn(['aula1','aula2','cine','conferencias','ingreso']).withMessage('Espacio inválido'),
+  body('espacio').isIn(['aula1','aula2','cine','conferencias','ingreso','puntodigital1','puntodigital2']).withMessage('Espacio inválido'),
   body('titulo').trim().isLength({ min:1, max:200 }).withMessage('Título requerido'),
   body('solicitante').trim().isLength({ min:1, max:200 }).withMessage('Solicitante requerido'),
   body('fecha').isDate().withMessage('Fecha inválida'),
@@ -387,7 +355,7 @@ app.post('/api/reservas', requireAuth, [
       });
     }
     const id = crypto.randomUUID();
-    const COLORES = { aula1:'#7C6FFF', aula2:'#9D5CFF', cine:'#FF6B6B', conferencias:'#20C997', ingreso:'#FFD43B' };
+    const COLORES = { aula1:'#7C6FFF', aula2:'#9D5CFF', cine:'#FF6B6B', conferencias:'#20C997', ingreso:'#FFD43B', puntodigital1:'#00B8D9', puntodigital2:'#0747A6' };
     const finalColor = color || COLORES[espacio] || '#7C6FFF';
     if (USE_PG) {
       await pool.query(
@@ -407,7 +375,7 @@ app.post('/api/reservas', requireAuth, [
 
 // PUT editar reserva
 app.put('/api/reservas/:id', requireAuth, [
-  body('espacio').isIn(['aula1','aula2','cine','conferencias','ingreso']).withMessage('Espacio inválido'),
+  body('espacio').isIn(['aula1','aula2','cine','conferencias','ingreso','puntodigital1','puntodigital2']).withMessage('Espacio inválido'),
   body('titulo').trim().isLength({ min:1, max:200 }).withMessage('Título requerido'),
   body('solicitante').trim().isLength({ min:1, max:200 }).withMessage('Solicitante requerido'),
   body('fecha').isDate().withMessage('Fecha inválida'),
@@ -446,7 +414,7 @@ app.put('/api/reservas/:id', requireAuth, [
       });
     }
 
-    const COLORES = { aula1:'#7C6FFF', aula2:'#9D5CFF', cine:'#FF6B6B', conferencias:'#20C997', ingreso:'#FFD43B' };
+    const COLORES = { aula1:'#7C6FFF', aula2:'#9D5CFF', cine:'#FF6B6B', conferencias:'#20C997', ingreso:'#FFD43B', puntodigital1:'#00B8D9', puntodigital2:'#0747A6' };
     const finalColor = color || COLORES[espacio] || '#7C6FFF';
     if (USE_PG) {
       await pool.query(

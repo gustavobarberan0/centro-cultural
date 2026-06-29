@@ -395,6 +395,8 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
   --cine:         #F7604F;
   --conferencias: #20C997;
   --ingreso:      #F59E0B;
+  --puntodigital1: #00B8D9;
+  --puntodigital2: #0747A6;
 }
 
 /* Filtro chips */
@@ -403,6 +405,8 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .filtro-chip.active.cine         { border-color: var(--cine);         color: var(--cine);         background: rgba(247,96,79,.06); }
 .filtro-chip.active.conferencias { border-color: var(--conferencias); color: var(--conferencias); background: rgba(32,201,151,.06); }
 .filtro-chip.active.ingreso      { border-color: var(--ingreso);      color: var(--ingreso);      background: rgba(245,158,11,.06); }
+.filtro-chip.active.puntodigital1 { border-color: var(--puntodigital1); color: var(--puntodigital1); background: rgba(0,184,217,.06); }
+.filtro-chip.active.puntodigital2 { border-color: var(--puntodigital2); color: var(--puntodigital2); background: rgba(7,71,166,.06); }
 
 /* Eventos en calendario */
 .cal-evento.aula1        { background: rgba(79,110,247,.13);  color: #3555d0; border-left-color: var(--aula1); }
@@ -410,6 +414,8 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .cal-evento.cine         { background: rgba(247,96,79,.12);   color: #c43a2b; border-left-color: var(--cine); }
 .cal-evento.conferencias { background: rgba(32,201,151,.12);  color: #0e8a67; border-left-color: var(--conferencias); }
 .cal-evento.ingreso      { background: rgba(245,158,11,.13);  color: #b45309; border-left-color: var(--ingreso); }
+.cal-evento.puntodigital1 { background: rgba(0,184,217,.13); color: #00708a; border-left-color: var(--puntodigital1); }
+.cal-evento.puntodigital2 { background: rgba(7,71,166,.13);  color: #0747a6; border-left-color: var(--puntodigital2); }
 
 /* Semana / día */
 .sem-evento.aula1        { background: rgba(79,110,247,.15);  border-color: var(--aula1);        color: #2d4bc4; }
@@ -417,12 +423,16 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .sem-evento.cine         { background: rgba(247,96,79,.13);   border-color: var(--cine);         color: #c43a2b; }
 .sem-evento.conferencias { background: rgba(32,201,151,.13);  border-color: var(--conferencias); color: #0e8a67; }
 .sem-evento.ingreso      { background: rgba(245,158,11,.14);  border-color: var(--ingreso);      color: #b45309; }
+.sem-evento.puntodigital1 { background: rgba(0,184,217,.15); border-color: var(--puntodigital1); color: #00708a; }
+.sem-evento.puntodigital2 { background: rgba(7,71,166,.15);  border-color: var(--puntodigital2); color: #0747a6; }
 
 .dia-evento.aula1        { background: rgba(79,110,247,.13);  border-color: var(--aula1);        color: #2d4bc4; }
 .dia-evento.aula2        { background: rgba(157,92,255,.13);  border-color: var(--aula2);        color: #7a3cc4; }
 .dia-evento.cine         { background: rgba(247,96,79,.10);   border-color: var(--cine);         color: #c43a2b; }
 .dia-evento.conferencias { background: rgba(32,201,151,.10);  border-color: var(--conferencias); color: #0e8a67; }
 .dia-evento.ingreso      { background: rgba(245,158,11,.12);  border-color: var(--ingreso);      color: #b45309; }
+.dia-evento.puntodigital1 { background: rgba(0,184,217,.10); border-color: var(--puntodigital1); color: #00708a; }
+.dia-evento.puntodigital2 { background: rgba(7,71,166,.10);  border-color: var(--puntodigital2); color: #0747a6; }
 
 /* Lista */
 .lista-dot.aula1        { background: var(--aula1); }
@@ -430,12 +440,16 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .lista-dot.cine         { background: var(--cine); }
 .lista-dot.conferencias { background: var(--conferencias); }
 .lista-dot.ingreso      { background: var(--ingreso); }
+.lista-dot.puntodigital1 { background: var(--puntodigital1); }
+.lista-dot.puntodigital2 { background: var(--puntodigital2); }
 
 .lista-tag.aula1        { background: rgba(79,110,247,.1);  color: #3555d0; }
 .lista-tag.aula2        { background: rgba(157,92,255,.1);  color: #7a3cc4; }
 .lista-tag.cine         { background: rgba(247,96,79,.1);   color: #d94a3a; }
 .lista-tag.conferencias { background: rgba(32,201,151,.1);  color: #0e8a67; }
 .lista-tag.ingreso      { background: rgba(245,158,11,.1);  color: #b45309; }
+.lista-tag.puntodigital1 { background: rgba(0,184,217,.1); color: #00708a; }
+.lista-tag.puntodigital2 { background: rgba(7,71,166,.1);  color: #0747a6; }
 
 /* Detail badge */
 .detail-espacio-badge.aula1        { background: rgba(79,110,247,.1);  color: #3555d0; }
@@ -448,6 +462,10 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .detail-espacio-badge.conferencias .dot { background: var(--conferencias); }
 .detail-espacio-badge.ingreso      { background: rgba(245,158,11,.1);  color: #b45309; }
 .detail-espacio-badge.ingreso .dot { background: var(--ingreso); }
+.detail-espacio-badge.puntodigital1 { background: rgba(0,184,217,.1); color: #00708a; }
+.detail-espacio-badge.puntodigital1 .dot { background: var(--puntodigital1); }
+.detail-espacio-badge.puntodigital2 { background: rgba(7,71,166,.1);  color: #0747a6; }
+.detail-espacio-badge.puntodigital2 .dot { background: var(--puntodigital2); }
 
 /* ── Banner hoy ── */
 @keyframes slideUp {
@@ -498,6 +516,8 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 .banner-dot.cine         { background: var(--cine); }
 .banner-dot.conferencias { background: var(--conferencias); }
 .banner-dot.ingreso      { background: var(--ingreso); }
+.banner-dot.puntodigital1 { background: var(--puntodigital1); }
+.banner-dot.puntodigital2 { background: var(--puntodigital2); }
 .banner-close { background: none; border: none; color: var(--text3); cursor: pointer; font-size: .85rem; padding: .2rem; border-radius: 5px; flex-shrink: 0; transition: color .15s; align-self: flex-start; }
 .banner-close:hover { color: var(--danger); }
 
