@@ -13,7 +13,7 @@ const state = {
   conflictoTimeout: null,
 };
 
-const ESPACIOS = { aula1: 'Aula 1', aula2: 'Aula 2', cine: 'Sala de Cine', conferencias: 'Sala de Conferencias', ingreso: 'Salón de Ingreso', puntodigital1: 'Punto Digital 1', puntodigital2: 'Punto Digital 2' };
+const ESPACIOS = { aula1: 'Aula 1', aula2: 'Aula 2', cine: 'Auditorio', conferencias: 'Sala de Conferencias', ingreso: 'Hall', puntodigital1: 'Aula Punto Digital', puntodigital2: 'Microcine' };
 const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES      = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
