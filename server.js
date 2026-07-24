@@ -44,7 +44,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:    ["'self'"],
-      scriptSrc:     ["'self'", "'unsafe-inline'"],
+      scriptSrc:     ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc:      ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
       fontSrc:       ["'self'", "https://fonts.gstatic.com"],
@@ -469,6 +469,64 @@ app.get('/api/reservas/conflictos', requireAuth, async (req, res) => {
       hora_fin:    c.hora_fin?.slice(0,5) || c.hora_fin,
     }))});
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── DASHBOARD STATS ───────────────────────────────────────────────────────────
+app.get('/api/stats', requireAdmin, async (req, res) => {
+  try {
+    const hoy = new Date().toISOString().split('T')[0];
+    const anio = new Date().getFullYear();
+
+    // Totales generales
+    const [total, realizadas, pendientes, porEspacio, porMes] = await Promise.all([
+      pool.query('SELECT COUNT(*) as cnt FROM reservas'),
+      pool.query('SELECT COUNT(*) as cnt FROM reservas WHERE fecha < $1', [hoy]),
+      pool.query('SELECT COUNT(*) as cnt FROM reservas WHERE fecha >= $1', [hoy]),
+
+      // Por espacio: cantidad de reservas y horas totales
+      pool.query(`
+        SELECT
+          espacio,
+          COUNT(*) as reservas,
+          ROUND(SUM(
+            EXTRACT(EPOCH FROM (hora_fin::time - hora_inicio::time)) / 3600
+          )::numeric, 1) as horas
+        FROM reservas
+        GROUP BY espacio
+        ORDER BY reservas DESC
+      `),
+
+      // Por mes del año actual
+      pool.query(`
+        SELECT
+          EXTRACT(MONTH FROM fecha)::int as mes,
+          COUNT(*) as reservas
+        FROM reservas
+        WHERE EXTRACT(YEAR FROM fecha) = $1
+        GROUP BY mes
+        ORDER BY mes
+      `, [anio]),
+    ]);
+
+    // Proximas reservas (próximos 30 días)
+    const proximas = await pool.query(`
+      SELECT espacio, titulo, solicitante, fecha, hora_inicio, hora_fin
+      FROM reservas
+      WHERE fecha >= $1 AND fecha <= $2
+      ORDER BY fecha, hora_inicio
+      LIMIT 10
+    `, [hoy, new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]]);
+
+    res.json({
+      total:      parseInt(total.rows[0].cnt),
+      realizadas: parseInt(realizadas.rows[0].cnt),
+      pendientes: parseInt(pendientes.rows[0].cnt),
+      porEspacio: porEspacio.rows,
+      porMes:     porMes.rows,
+      proximas:   proximas.rows,
+      anio,
+    });
+  } catch(e) { console.error('stats error:', e.message); res.status(500).json({ error: e.message }); }
 });
 
 // ── Error handler ──────────────────────────────────────────────────────────────

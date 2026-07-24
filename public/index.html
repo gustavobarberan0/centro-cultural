@@ -22,6 +22,10 @@
     </div>
 
     <nav class="sidebar-nav">
+      <div class="nav-section-label">General</div>
+      <div class="nav-item" onclick="abrirDashboard()" id="navDashboard" style="display:none">
+        <span class="nav-icon">&#9636;</span><span>Dashboard</span>
+      </div>
       <div class="nav-section-label">Calendario</div>
       <div class="nav-item active" onclick="setVista('mensual')" id="navMensual">
         <span class="nav-icon">&#9632;</span><span>Calendario</span>
@@ -108,19 +112,19 @@
             <span class="dot" style="background:#9D5CFF"></span>Aula 2
           </div>
           <div class="filtro-chip cine" onclick="setFiltro('cine')">
-            <span class="dot" style="background:#F7604F"></span>Auditorio
+            <span class="dot" style="background:#F7604F"></span>Sala de Cine
           </div>
           <div class="filtro-chip conferencias" onclick="setFiltro('conferencias')">
             <span class="dot" style="background:#20C997"></span>Conferencias
           </div>
           <div class="filtro-chip ingreso" onclick="setFiltro('ingreso')">
-            <span class="dot" style="background:#FFD43B"></span>Hall
+            <span class="dot" style="background:#FFD43B"></span>Salón Ingreso
           </div>
           <div class="filtro-chip puntodigital1" onclick="setFiltro('puntodigital1')">
-            <span class="dot" style="background:#00B8D9"></span>Aula Punto digital
+            <span class="dot" style="background:#00B8D9"></span>Punto Digital 1
           </div>
           <div class="filtro-chip puntodigital2" onclick="setFiltro('puntodigital2')">
-            <span class="dot" style="background:#0747A6"></span>Microcine
+            <span class="dot" style="background:#0747A6"></span>Punto Digital 2
           </div>
         </div>
         <div id="calendarWrap"></div>
@@ -321,6 +325,27 @@
     <span class="bnav-icon">&#9881;</span>Admin
   </button>
 </nav>
+
+
+  <!-- MODAL DASHBOARD -->
+  <div class="modal-overlay" id="modalDashboard">
+    <div class="modal" style="max-width:860px;width:96vw;max-height:90vh;overflow-y:auto">
+      <div class="modal-header">
+        <h3>Dashboard — Resumen Estadístico</h3>
+        <button onclick="cerrarModal('modalDashboard')">✕</button>
+      </div>
+      <div class="modal-body" id="dashBody">
+        <div style="text-align:center;padding:2rem;color:var(--text2)">Cargando estadísticas...</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="cerrarModal('modalDashboard')">Cerrar</button>
+        <button class="btn-primary" onclick="generarPDF()" style="display:flex;align-items:center;gap:.4rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar Informe PDF
+        </button>
+      </div>
+    </div>
+  </div>
 
 <script src="/js/app.js"></script>
 </body>

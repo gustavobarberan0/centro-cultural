@@ -95,6 +95,7 @@ async function init() {
     document.getElementById('userAvatar').textContent = d.nombre.charAt(0).toUpperCase();
     if (d.rol === 'admin') {
       document.getElementById('navAdmin').style.display = 'flex';
+      document.getElementById('navDashboard').style.display = 'flex';
       const bnavAdmin = document.getElementById('bnav-admin');
       if (bnavAdmin) bnavAdmin.style.display = 'flex';
     }
@@ -588,7 +589,7 @@ function showToast(msg, type='success') {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key==='Escape') ['modalReserva','modalAdmin'].forEach(id=>cerrarModal(id));
+  if (e.key==='Escape') ['modalReserva','modalAdmin','modalDashboard','modalMiPass','modalResetPass'].forEach(id=>cerrarModal(id));
 });
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if(e.target===o) cerrarModal(o.id); });
@@ -711,6 +712,411 @@ async function confirmarResetPass() {
 function setBottomNav(id) {
   document.querySelectorAll('.bottom-nav-item').forEach(el =>
     el.classList.toggle('active', el.id === id));
+}
+
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────────
+const ESPACIOS_NOMBRES = {
+  aula1: 'Aula 1', aula2: 'Aula 2', cine: 'Auditorio',
+  conferencias: 'Sala de Conferencias', ingreso: 'Hall',
+  puntodigital1: 'Aula Punto Digital', puntodigital2: 'Microcine'
+};
+const COLORES_ESPACIO = {
+  aula1:'#4F6EF7', aula2:'#9D5CFF', cine:'#F7604F',
+  conferencias:'#20C997', ingreso:'#F59E0B',
+  puntodigital1:'#00B8D9', puntodigital2:'#0747A6'
+};
+const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+let statsCache = null;
+
+async function abrirDashboard() {
+  // Solo admins
+  if (state.usuarioRol !== 'admin') {
+    showToast('Solo los administradores pueden acceder al Dashboard', 'error');
+    return;
+  }
+  abrirModal('modalDashboard');
+  document.getElementById('dashBody').innerHTML =
+    '<div style="text-align:center;padding:2rem;color:var(--text2)">Cargando estadísticas...</div>';
+
+  try {
+    const r = await fetch('/api/stats', { credentials: 'same-origin' });
+    if (!r.ok) throw new Error('Error al cargar stats');
+    statsCache = await r.json();
+    renderDashboard(statsCache);
+  } catch(e) {
+    document.getElementById('dashBody').innerHTML =
+      '<div style="text-align:center;padding:2rem;color:var(--danger)">Error al cargar estadísticas. Intentá de nuevo.</div>';
+  }
+}
+
+function renderDashboard(d) {
+  const maxEsp = d.porEspacio.length ? Math.max(...d.porEspacio.map(e => parseInt(e.reservas))) : 1;
+  const maxMes = d.porMes.length ? Math.max(...d.porMes.map(m => parseInt(m.reservas))) : 1;
+
+  // Tarjetas de resumen
+  const cards = `
+    <div class="dash-cards">
+      <div class="dash-card">
+        <div class="dash-card-num">${d.total}</div>
+        <div class="dash-card-label">Total Reservas</div>
+      </div>
+      <div class="dash-card verde">
+        <div class="dash-card-num">${d.realizadas}</div>
+        <div class="dash-card-label">Realizadas</div>
+      </div>
+      <div class="dash-card azul">
+        <div class="dash-card-num">${d.pendientes}</div>
+        <div class="dash-card-label">Pendientes</div>
+      </div>
+      <div class="dash-card naranja">
+        <div class="dash-card-num">${d.porEspacio.length}</div>
+        <div class="dash-card-label">Espacios activos</div>
+      </div>
+    </div>`;
+
+  // Barras por espacio
+  const barrasEspacio = `
+    <div class="dash-section">
+      <div class="dash-section-title">Uso por Espacio — ${d.anio}</div>
+      <div class="dash-bars">
+        ${d.porEspacio.map(e => {
+          const pct = Math.round(parseInt(e.reservas) / maxEsp * 100);
+          const col = COLORES_ESPACIO[e.espacio] || '#7C6FFF';
+          const nom = ESPACIOS_NOMBRES[e.espacio] || e.espacio;
+          return `
+            <div class="dash-bar-row">
+              <div class="dash-bar-label" title="${nom}">${nom}</div>
+              <div class="dash-bar-track">
+                <div class="dash-bar-fill" style="width:${pct}%;background:${col}"></div>
+              </div>
+              <div class="dash-bar-val">${e.reservas} res. · ${e.horas || 0}h</div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  // Barras por mes
+  const mesesData = Array.from({length:12}, (_,i) => {
+    const found = d.porMes.find(m => m.mes === i+1);
+    return found ? parseInt(found.reservas) : 0;
+  });
+  const barrasMes = `
+    <div class="dash-section">
+      <div class="dash-section-title">Reservas por Mes — ${d.anio}</div>
+      <div class="dash-col-chart">
+        ${mesesData.map((v, i) => {
+          const pct = maxMes > 0 ? Math.round(v / maxMes * 100) : 0;
+          return `
+            <div class="dash-col-item">
+              <div class="dash-col-bar-wrap">
+                <div class="dash-col-bar" style="height:${pct}%" title="${v} reservas"></div>
+              </div>
+              <div class="dash-col-val">${v > 0 ? v : ''}</div>
+              <div class="dash-col-mes">${MESES_CORTO[i]}</div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  // Próximas reservas
+  const hoy = fmtDate(new Date());
+  const proxTable = d.proximas.length ? `
+    <div class="dash-section">
+      <div class="dash-section-title">Próximas Reservas (30 días)</div>
+      <div style="overflow-x:auto">
+        <table class="dash-table">
+          <thead><tr><th>Fecha</th><th>Horario</th><th>Espacio</th><th>Título</th><th>Solicitante</th></tr></thead>
+          <tbody>
+            ${d.proximas.map(p => {
+              const esHoy = normFecha(p.fecha) === hoy;
+              return `<tr${esHoy ? ' class="dash-hoy-row"' : ''}>
+                <td>${formatFechaLarga(p.fecha)}</td>
+                <td>${(p.hora_inicio||'').slice(0,5)} – ${(p.hora_fin||'').slice(0,5)}</td>
+                <td><span class="lista-tag ${p.espacio}">${ESPACIOS_NOMBRES[p.espacio]||p.espacio}</span></td>
+                <td>${p.titulo}</td>
+                <td>${p.solicitante}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : '';
+
+  document.getElementById('dashBody').innerHTML = cards + barrasEspacio + barrasMes + proxTable;
+}
+
+// ── GENERAR PDF ────────────────────────────────────────────────────────────────
+function generarPDF() {
+  if (!statsCache) { showToast('Cargá el dashboard primero', 'error'); return; }
+
+  // Cargar jsPDF desde CDN si no está disponible
+  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+    showToast('Cargando librería PDF...', 'success');
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    script.onload = () => construirPDF();
+    script.onerror = () => showToast('No se pudo cargar la librería PDF', 'error');
+    document.head.appendChild(script);
+  } else {
+    construirPDF();
+  }
+}
+
+function construirPDF() {
+  try {
+    const { jsPDF } = window.jspdf || window;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const d = statsCache;
+    const hoy = new Date();
+    const fechaStr = hoy.toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
+    const anioStr = d.anio;
+
+    // Paleta
+    const azulOsc  = [28, 35, 64];   // #1C2340
+    const azulMed  = [79, 110, 247]; // #4F6EF7
+    const gris     = [120, 120, 135];
+    const grisClar = [245, 245, 248];
+    const negro    = [30, 30, 40];
+
+    const W = 210, M = 18; // ancho A4, margen
+    let y = 0;
+
+    // ── ENCABEZADO ──
+    // Fondo header
+    doc.setFillColor(...azulOsc);
+    doc.rect(0, 0, W, 42, 'F');
+
+    // Logo embebido (extraer base64 del img en el HTML)
+    try {
+      const imgEl = document.querySelector('.sidebar-logo img, #sidebarLogo img');
+      if (imgEl && imgEl.src && imgEl.src.startsWith('data:')) {
+        doc.addImage(imgEl.src, 'JPEG', M, 8, 22, 22);
+      }
+    } catch(e) {}
+
+    // Título institución
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Centro Cultural Municipal', M + 26, 16);
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(180, 190, 230);
+    doc.text('Sistema de Gestión de Reservas', M + 26, 22);
+
+    // Título del informe
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text(`Informe Estadístico de Reservas — ${anioStr}`, M + 26, 30);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(180, 190, 230);
+    doc.text(`Generado el ${fechaStr}`, M + 26, 36);
+
+    y = 52;
+
+    // ── CITA APA ──
+    doc.setFontSize(8);
+    doc.setTextColor(...gris);
+    doc.setFont('helvetica', 'italic');
+    const apa = `Centro Cultural Municipal. (${anioStr}). Informe estadístico de reservas de espacios — ${anioStr}. Sistema de Gestión de Reservas.`;
+    const apaLines = doc.splitTextToSize(apa, W - M * 2);
+    doc.text(apaLines, M, y);
+    y += apaLines.length * 4 + 6;
+
+    // Línea separadora
+    doc.setDrawColor(...azulMed);
+    doc.setLineWidth(0.5);
+    doc.line(M, y, W - M, y);
+    y += 7;
+
+    // ── TARJETAS RESUMEN ──
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...negro);
+    doc.text('1. Resumen General', M, y);
+    y += 7;
+
+    const tarjetas = [
+      { label: 'Total Reservas', val: d.total, col: azulMed },
+      { label: 'Realizadas',     val: d.realizadas, col: [32, 201, 151] },
+      { label: 'Pendientes',     val: d.pendientes, col: [0, 184, 217] },
+      { label: 'Espacios',       val: d.porEspacio.length, col: [245, 158, 11] },
+    ];
+
+    const cardW = (W - M * 2 - 9) / 4;
+    tarjetas.forEach((t, i) => {
+      const cx = M + i * (cardW + 3);
+      doc.setFillColor(...grisClar);
+      doc.roundedRect(cx, y, cardW, 22, 2, 2, 'F');
+      doc.setFillColor(...t.col);
+      doc.roundedRect(cx, y, 3, 22, 1, 1, 'F');
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...t.col);
+      doc.text(String(t.val), cx + cardW / 2, y + 12, { align: 'center' });
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...gris);
+      doc.text(t.label, cx + cardW / 2, y + 18, { align: 'center' });
+    });
+    y += 30;
+
+    // ── TABLA POR ESPACIO ──
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...negro);
+    doc.text('2. Uso por Espacio', M, y);
+    y += 6;
+
+    // Cabecera tabla
+    doc.setFillColor(...azulOsc);
+    doc.rect(M, y, W - M * 2, 7, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Espacio', M + 3, y + 4.5);
+    doc.text('Reservas', M + 90, y + 4.5, { align: 'center' });
+    doc.text('Horas totales', M + 120, y + 4.5, { align: 'center' });
+    doc.text('% del total', M + 152, y + 4.5, { align: 'center' });
+    y += 7;
+
+    d.porEspacio.forEach((e, i) => {
+      const bg = i % 2 === 0 ? [255, 255, 255] : grisClar;
+      doc.setFillColor(...bg);
+      doc.rect(M, y, W - M * 2, 7, 'F');
+      const col = COLORES_ESPACIO[e.espacio] || '#7C6FFF';
+      const rgb = hexToRgb(col);
+      doc.setFillColor(...rgb);
+      doc.rect(M, y, 3, 7, 'F');
+      doc.setTextColor(...negro);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ESPACIOS_NOMBRES[e.espacio] || e.espacio, M + 6, y + 4.5);
+      doc.text(String(e.reservas), M + 90, y + 4.5, { align: 'center' });
+      doc.text(String(e.horas || 0) + 'h', M + 120, y + 4.5, { align: 'center' });
+      const pct = d.total > 0 ? ((parseInt(e.reservas) / d.total) * 100).toFixed(1) : '0';
+      doc.text(pct + '%', M + 152, y + 4.5, { align: 'center' });
+      // Mini barra
+      const barW = 30;
+      const barFill = Math.round(parseInt(e.reservas) / Math.max(...d.porEspacio.map(x => parseInt(x.reservas))) * barW);
+      doc.setFillColor(230, 230, 240);
+      doc.rect(M + 162, y + 2, barW, 3, 'F');
+      doc.setFillColor(...rgb);
+      doc.rect(M + 162, y + 2, barFill, 3, 'F');
+      y += 7;
+    });
+    y += 8;
+
+    // ── TABLA POR MES ──
+    if (y > 230) { doc.addPage(); y = 20; }
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...negro);
+    doc.text(`3. Distribución Mensual — ${anioStr}`, M, y);
+    y += 6;
+
+    const mesesData = Array.from({length:12}, (_,i) => {
+      const found = d.porMes.find(m => m.mes === i+1);
+      return found ? parseInt(found.reservas) : 0;
+    });
+    const maxM = Math.max(...mesesData, 1);
+    const chartH = 35, chartW = W - M * 2, barW2 = chartW / 12;
+
+    // Eje
+    doc.setDrawColor(220, 220, 230);
+    doc.setLineWidth(0.2);
+    for (let g = 0; g <= 4; g++) {
+      const gy = y + chartH - (g / 4 * chartH);
+      doc.line(M, gy, W - M, gy);
+      doc.setFontSize(6);
+      doc.setTextColor(...gris);
+      doc.text(String(Math.round(maxM * g / 4)), M - 3, gy + 1, { align: 'right' });
+    }
+
+    mesesData.forEach((v, i) => {
+      const bH = maxM > 0 ? (v / maxM) * chartH : 0;
+      const bx = M + i * barW2 + barW2 * 0.15;
+      const bw = barW2 * 0.7;
+      doc.setFillColor(...azulMed);
+      doc.roundedRect(bx, y + chartH - bH, bw, bH, 1, 1, 'F');
+      doc.setFontSize(6);
+      doc.setTextColor(...negro);
+      if (v > 0) doc.text(String(v), bx + bw / 2, y + chartH - bH - 1, { align: 'center' });
+      doc.setTextColor(...gris);
+      doc.text(MESES_CORTO[i], bx + bw / 2, y + chartH + 4, { align: 'center' });
+    });
+    y += chartH + 10;
+
+    // ── PRÓXIMAS RESERVAS ──
+    if (d.proximas.length > 0) {
+      if (y > 220) { doc.addPage(); y = 20; }
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...negro);
+      doc.text('4. Próximas Reservas (30 días)', M, y);
+      y += 6;
+
+      doc.setFillColor(...azulOsc);
+      doc.rect(M, y, W - M * 2, 7, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      const cols4 = [M + 3, M + 45, M + 82, M + 115, M + 148];
+      ['Fecha', 'Horario', 'Espacio', 'Título', 'Solicitante'].forEach((h, i) =>
+        doc.text(h, cols4[i], y + 4.5));
+      y += 7;
+
+      d.proximas.forEach((p, i) => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.setFillColor(...(i % 2 === 0 ? [255,255,255] : grisClar));
+        doc.rect(M, y, W - M * 2, 7, 'F');
+        doc.setTextColor(...negro);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        const fecha = formatFechaLarga(p.fecha);
+        doc.text(doc.splitTextToSize(fecha, 38)[0], cols4[0], y + 4.5);
+        doc.text(`${(p.hora_inicio||'').slice(0,5)}–${(p.hora_fin||'').slice(0,5)}`, cols4[1], y + 4.5);
+        doc.text(doc.splitTextToSize(ESPACIOS_NOMBRES[p.espacio]||p.espacio, 28)[0], cols4[2], y + 4.5);
+        doc.text(doc.splitTextToSize(p.titulo, 28)[0], cols4[3], y + 4.5);
+        doc.text(doc.splitTextToSize(p.solicitante, 28)[0], cols4[4], y + 4.5);
+        y += 7;
+      });
+    }
+
+    // ── PIE DE PÁGINA ──
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let pg = 1; pg <= totalPages; pg++) {
+      doc.setPage(pg);
+      doc.setFillColor(...grisClar);
+      doc.rect(0, 285, W, 12, 'F');
+      doc.setFontSize(7);
+      doc.setTextColor(...gris);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Centro Cultural Municipal — Sistema de Gestión de Reservas`, M, 291);
+      doc.text(`Página ${pg} de ${totalPages}`, W - M, 291, { align: 'right' });
+    }
+
+    const fname = `informe-reservas-${anioStr}-${fmtDate(new Date())}.pdf`;
+    doc.save(fname);
+    showToast('PDF generado correctamente', 'success');
+  } catch(e) {
+    console.error('PDF error:', e);
+    showToast('Error generando el PDF: ' + e.message, 'error');
+  }
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
 }
 
 init();
