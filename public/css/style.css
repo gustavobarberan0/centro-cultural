@@ -281,7 +281,7 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 @media (max-width: 900px) {
   .sidebar { width: 56px; }
   .sidebar-app-name, .sidebar-app-sub,
-  .nav-item span, .sidebar-stats,
+  .nav-item span:not(.nav-icon), .sidebar-stats,
   .user-info, .nav-section-label { display: none; }
   .nav-item { justify-content: center; padding: .55rem; margin: .08rem .3rem; }
   .sidebar-logo { padding: .7rem .5rem; justify-content: center; }
@@ -301,6 +301,8 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
   .sidebar.drawer-open .sidebar-logo { padding: 1.1rem 1rem .9rem; justify-content: flex-start; }
   .sidebar.drawer-open .sidebar-logo > div:last-child { display: block; }
   .sidebar.drawer-open .sidebar-user { justify-content: flex-start; padding: .75rem; }
+  #labelGeneral { display: none !important; }
+  .sidebar.drawer-open #labelGeneral { display: block !important; }
 }
 
 /* ── Tablet (641px–900px) ──
