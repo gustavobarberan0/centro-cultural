@@ -22,7 +22,7 @@
     </div>
 
     <nav class="sidebar-nav">
-      <div class="nav-section-label">General</div>
+      <div class="nav-section-label" id="labelGeneral" style="display:none">General</div>
       <div class="nav-item" onclick="abrirDashboard()" id="navDashboard" style="display:none">
         <span class="nav-icon">&#9636;</span><span>Dashboard</span>
       </div>
@@ -52,7 +52,7 @@
       <div class="stat-card">
         <div class="stat-label">Espacios Disponibles</div>
         <div class="stat-val" id="statEspacios">2</div>
-        <div class="stat-sub">Aula 1 · Aula 2 · Cine · Conf. · Ingreso</div>
+        <div class="stat-sub">Aula 01 · Aula 02 · Aud. · Conf. · Hall · APD · Micro</div>
       </div>
     </div>
 
@@ -106,10 +106,10 @@
             <span class="dot" style="background:#4F6EF7"></span>Todos
           </div>
           <div class="filtro-chip aula1" onclick="setFiltro('aula1')">
-            <span class="dot" style="background:#4F6EF7"></span>Aula 1
+            <span class="dot" style="background:#4F6EF7"></span>Aula 01
           </div>
           <div class="filtro-chip aula2" onclick="setFiltro('aula2')">
-            <span class="dot" style="background:#9D5CFF"></span>Aula 2
+            <span class="dot" style="background:#9D5CFF"></span>Aula 02
           </div>
           <div class="filtro-chip cine" onclick="setFiltro('cine')">
             <span class="dot" style="background:#F7604F"></span>Auditorio
@@ -158,12 +158,12 @@
       <div class="field">
         <label>Espacio</label>
         <select id="rEspacio" onchange="checkConflictos()">
-          <option value="aula1">Aula 1</option>
-          <option value="aula2">Aula 2</option>
+          <option value="aula1">Aula 01</option>
+          <option value="aula2">Aula 02</option>
           <option value="cine">Auditorio</option>
-          <option value="conferencias">Sala de Conferencias</option>
+          <option value="conferencias">Sala de conferencias</option>
           <option value="ingreso">Hall</option>
-          <option value="puntodigital1">Aula Punto Digital</option>
+          <option value="puntodigital1">Aula punto digital</option>
           <option value="puntodigital2">Microcine</option>
         </select>
       </div>
@@ -337,11 +337,35 @@
       <div class="modal-body" id="dashBody">
         <div style="text-align:center;padding:2rem;color:var(--text2)">Cargando estadísticas...</div>
       </div>
+
+      <!-- Generador de informes por período -->
+      <div class="dash-informe-bar">
+        <div class="dash-informe-label">Generar informe</div>
+        <div class="dash-informe-controls">
+          <select id="tipoInforme" onchange="toggleSelectorMes()">
+            <option value="mensual">Mensual</option>
+            <option value="anual">Anual</option>
+          </select>
+          <select id="informeMes">
+            <option value="1">Enero</option><option value="2">Febrero</option>
+            <option value="3">Marzo</option><option value="4">Abril</option>
+            <option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option>
+            <option value="9">Septiembre</option><option value="10">Octubre</option>
+            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+          <input type="number" id="informeAnio" min="2020" max="2099" style="width:78px">
+          <button class="btn-secondary" id="btnGenerarPeriodo" onclick="generarInformePeriodo()">
+            Descargar
+          </button>
+        </div>
+      </div>
+
       <div class="modal-footer">
         <button class="btn-secondary" onclick="cerrarModal('modalDashboard')">Cerrar</button>
         <button class="btn-primary" onclick="generarPDF()" style="display:flex;align-items:center;gap:.4rem">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Descargar Informe PDF
+          Informe General (PDF)
         </button>
       </div>
     </div>

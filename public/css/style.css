@@ -303,6 +303,36 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
   .sidebar.drawer-open .sidebar-user { justify-content: flex-start; padding: .75rem; }
 }
 
+/* ── Tablet (641px–900px) ──
+   El sidebar queda colapsado a íconos (regla de 900px) pero antes no había
+   forma de expandirlo ni de ver los filtros completos: se agrega el botón
+   hamburguesa (con el drawer que ya existía) y se hacen scrolleables los
+   filtros de espacio, sin activar el layout 100% mobile (bottom-nav, FAB,
+   modal desde abajo siguen siendo exclusivos de ≤640px). */
+@media (min-width: 641px) and (max-width: 900px) {
+  .btn-hamburger  { display: flex; }
+  .btn-logout-top { display: flex; }
+  .btn-logout-side { display: none; }
+
+  .filtros-bar {
+    flex-wrap: nowrap; overflow-x: auto; padding-bottom: .3rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filtros-bar::-webkit-scrollbar { display: none; }
+  .filtro-chip { flex-shrink: 0; }
+
+  .detail-panel { width: 240px; }
+  .detail-titulo { font-size: .95rem; }
+
+  .topbar-title { font-size: .95rem; }
+  .topbar-sub   { font-size: .68rem; }
+
+  .modal { max-width: 92vw; }
+
+  .dash-table { font-size: .76rem; }
+  .dash-bar-label { width: 120px; }
+}
+
 /* ── Mobile (≤640px) ── */
 @media (max-width: 640px) {
   .sidebar { display: none; }
@@ -354,6 +384,21 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
   .bottom-nav { display: flex; }
   .content-split { padding-bottom: 64px; }
   .toast { bottom: 5.2rem; }
+
+  /* Listado de reservas: se reordena a 2 líneas para que el nombre del
+     espacio (ahora más largo: "Sala de conferencias", "Aula punto digital")
+     no empuje el título/solicitante fuera de la tarjeta ni la deforme. */
+  .lista-item {
+    flex-wrap: wrap; align-items: center;
+    padding: .6rem .7rem; gap: .35rem .5rem;
+  }
+  .lista-dot  { order: 1; }
+  .lista-hora { order: 2; min-width: 0; font-size: .7rem; }
+  .lista-tag  { order: 3; margin-left: auto; font-size: .62rem; padding: .12rem .45rem; }
+  .lista-info { order: 4; flex: 1 1 100%; }
+  .lista-titulo { font-size: .82rem; }
+  .lista-sol     { font-size: .7rem; }
+  .lista-fecha-header { font-size: .7rem; }
 }
 
 /* ── Bottom Nav ── */
@@ -724,3 +769,33 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 
 /* Nav Dashboard */
 #navDashboard .nav-icon { font-size: .85rem; }
+
+/* ── Generador de informes por período (modal Dashboard) ── */
+.dash-informe-bar {
+  display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+  padding: .85rem 1.1rem; border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.dash-informe-label {
+  font-size: .78rem; font-weight: 700; color: var(--text2);
+  text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0;
+}
+.dash-informe-controls {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; flex: 1;
+}
+.dash-informe-controls select,
+.dash-informe-controls input {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: .4rem .6rem; font-size: .8rem;
+  color: var(--text); font-family: inherit;
+}
+.dash-informe-controls .btn-secondary {
+  padding: .42rem 1rem; font-size: .8rem; white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .dash-informe-bar { flex-direction: column; align-items: stretch; gap: .5rem; }
+  .dash-informe-controls { width: 100%; }
+  .dash-informe-controls select,
+  .dash-informe-controls input { flex: 1; min-width: 0; }
+}

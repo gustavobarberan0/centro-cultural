@@ -13,7 +13,7 @@ const state = {
   conflictoTimeout: null,
 };
 
-const ESPACIOS = { aula1: 'Aula 1', aula2: 'Aula 2', cine: 'Auditorio', conferencias: 'Sala de Conferencias', ingreso: 'Hall', puntodigital1: 'Aula Punto Digital', puntodigital2: 'Microcine' };
+const ESPACIOS = { aula1: 'Aula 01', aula2: 'Aula 02', cine: 'Auditorio', conferencias: 'Sala de conferencias', ingreso: 'Hall', puntodigital1: 'Aula punto digital', puntodigital2: 'Microcine' };
 const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const DIAS_LARGO = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MESES      = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -96,6 +96,7 @@ async function init() {
     if (d.rol === 'admin') {
       document.getElementById('navAdmin').style.display = 'flex';
       document.getElementById('navDashboard').style.display = 'flex';
+      document.getElementById('labelGeneral').style.display = 'block';
       const bnavAdmin = document.getElementById('bnav-admin');
       if (bnavAdmin) bnavAdmin.style.display = 'flex';
     }
@@ -717,9 +718,9 @@ function setBottomNav(id) {
 
 // ── DASHBOARD ──────────────────────────────────────────────────────────────────
 const ESPACIOS_NOMBRES = {
-  aula1: 'Aula 1', aula2: 'Aula 2', cine: 'Auditorio',
-  conferencias: 'Sala de Conferencias', ingreso: 'Hall',
-  puntodigital1: 'Aula Punto Digital', puntodigital2: 'Microcine'
+  aula1: 'Aula 01', aula2: 'Aula 02', cine: 'Auditorio',
+  conferencias: 'Sala de conferencias', ingreso: 'Hall',
+  puntodigital1: 'Aula punto digital', puntodigital2: 'Microcine'
 };
 const COLORES_ESPACIO = {
   aula1:'#4F6EF7', aula2:'#9D5CFF', cine:'#F7604F',
@@ -740,6 +741,14 @@ async function abrirDashboard() {
   document.getElementById('dashBody').innerHTML =
     '<div style="text-align:center;padding:2rem;color:var(--text2)">Cargando estadísticas...</div>';
 
+  // Inicializar selector de informes por período con mes/año actuales
+  const hoy = new Date();
+  const selMes = document.getElementById('informeMes');
+  const inpAnio = document.getElementById('informeAnio');
+  if (selMes) selMes.value = String(hoy.getMonth() + 1);
+  if (inpAnio) inpAnio.value = hoy.getFullYear();
+  toggleSelectorMes();
+
   try {
     const r = await fetch('/api/stats', { credentials: 'same-origin' });
     if (!r.ok) throw new Error('Error al cargar stats');
@@ -749,6 +758,13 @@ async function abrirDashboard() {
     document.getElementById('dashBody').innerHTML =
       '<div style="text-align:center;padding:2rem;color:var(--danger)">Error al cargar estadísticas. Intentá de nuevo.</div>';
   }
+}
+
+// Muestra/oculta el selector de mes según el tipo de informe elegido
+function toggleSelectorMes() {
+  const tipo = document.getElementById('tipoInforme').value;
+  const selMes = document.getElementById('informeMes');
+  if (selMes) selMes.style.display = tipo === 'mensual' ? 'inline-block' : 'none';
 }
 
 function renderDashboard(d) {
@@ -848,47 +864,113 @@ function renderDashboard(d) {
 }
 
 // ── GENERAR PDF ────────────────────────────────────────────────────────────────
+
+// Trunca texto con "…" si no entra en el ancho disponible (evita overlaps silenciosos)
+function fitText(doc, text, maxWidthMm) {
+  text = String(text || '');
+  if (doc.getTextWidth(text) <= maxWidthMm) return text;
+  let truncado = text;
+  while (truncado.length > 1 && doc.getTextWidth(truncado + '…') > maxWidthMm) {
+    truncado = truncado.slice(0, -1);
+  }
+  return truncado + '…';
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+// Botón principal del modal: informe general (año actual, comportamiento original)
 function generarPDF() {
   if (!statsCache) { showToast('Cargá el dashboard primero', 'error'); return; }
+  ejecutarGeneracionPDF(statsCache, 'general');
+}
 
-  // Cargar jsPDF desde CDN si no está disponible
+// Informes por período: consulta stats frescas para el período elegido
+async function generarInformePeriodo() {
+  const tipo = document.getElementById('tipoInforme').value; // 'mensual' | 'anual'
+  const anio = parseInt(document.getElementById('informeAnio').value) || new Date().getFullYear();
+  const btn  = document.getElementById('btnGenerarPeriodo');
+
+  let url = '/api/stats?anio=' + anio;
+  if (tipo === 'mensual') {
+    const mes = parseInt(document.getElementById('informeMes').value);
+    url += '&mes=' + mes;
+  }
+
+  btn.disabled = true;
+  const textoOriginal = btn.textContent;
+  btn.textContent = 'Generando...';
+
+  try {
+    const r = await fetch(url, { credentials: 'same-origin' });
+    if (!r.ok) throw new Error('Error al obtener datos del período');
+    const data = await r.json();
+    ejecutarGeneracionPDF(data, tipo);
+  } catch(e) {
+    showToast('Error al generar el informe: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
+}
+
+function ejecutarGeneracionPDF(data, tipo) {
   if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
     showToast('Cargando librería PDF...', 'success');
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    script.onload = () => construirPDF();
+    script.onload = () => construirPDF(data, tipo);
     script.onerror = () => showToast('No se pudo cargar la librería PDF', 'error');
     document.head.appendChild(script);
   } else {
-    construirPDF();
+    construirPDF(data, tipo);
   }
 }
 
-function construirPDF() {
+const MESES_LARGO = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function construirPDF(d, tipo) {
   try {
     const { jsPDF } = window.jspdf || window;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const d = statsCache;
     const hoy = new Date();
     const fechaStr = hoy.toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
     const anioStr = d.anio;
 
+    // Título y subtítulo según tipo de informe
+    let tituloInforme, apaTitulo, cita;
+    if (tipo === 'mensual') {
+      const nombreMes = MESES_LARGO[d.mes - 1];
+      tituloInforme = `Informe Mensual de Reservas — ${nombreMes} ${anioStr}`;
+      apaTitulo = `Informe mensual de reservas de espacios — ${nombreMes} de ${anioStr}`;
+    } else if (tipo === 'anual') {
+      tituloInforme = `Informe Anual de Reservas — ${anioStr}`;
+      apaTitulo = `Informe anual de reservas de espacios — ${anioStr}`;
+    } else {
+      tituloInforme = `Informe Estadístico de Reservas — ${anioStr}`;
+      apaTitulo = `Informe estadístico de reservas de espacios — ${anioStr}`;
+    }
+    cita = `Centro Cultural Municipal. (${anioStr}). ${apaTitulo}. Sistema de Gestión de Reservas.`;
+
     // Paleta
-    const azulOsc  = [28, 35, 64];   // #1C2340
-    const azulMed  = [79, 110, 247]; // #4F6EF7
+    const azulOsc  = [28, 35, 64];
+    const azulMed  = [79, 110, 247];
     const gris     = [120, 120, 135];
     const grisClar = [245, 245, 248];
     const negro    = [30, 30, 40];
 
-    const W = 210, M = 18; // ancho A4, margen
+    const W = 210, M = 18;
+    const anchoUtil = W - M * 2; // 174mm — todo debe quedar dentro de este ancho
     let y = 0;
 
     // ── ENCABEZADO ──
-    // Fondo header
     doc.setFillColor(...azulOsc);
     doc.rect(0, 0, W, 42, 'F');
 
-    // Logo embebido (extraer base64 del img en el HTML)
     try {
       const imgEl = document.querySelector('.sidebar-logo img, #sidebarLogo img');
       if (imgEl && imgEl.src && imgEl.src.startsWith('data:')) {
@@ -896,7 +978,6 @@ function construirPDF() {
       }
     } catch(e) {}
 
-    // Título institución
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
@@ -907,11 +988,10 @@ function construirPDF() {
     doc.setTextColor(180, 190, 230);
     doc.text('Sistema de Gestión de Reservas', M + 26, 22);
 
-    // Título del informe
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text(`Informe Estadístico de Reservas — ${anioStr}`, M + 26, 30);
+    doc.text(fitText(doc, tituloInforme, W - M - 26 - 4), M + 26, 30);
 
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
@@ -924,12 +1004,10 @@ function construirPDF() {
     doc.setFontSize(8);
     doc.setTextColor(...gris);
     doc.setFont('helvetica', 'italic');
-    const apa = `Centro Cultural Municipal. (${anioStr}). Informe estadístico de reservas de espacios — ${anioStr}. Sistema de Gestión de Reservas.`;
-    const apaLines = doc.splitTextToSize(apa, W - M * 2);
+    const apaLines = doc.splitTextToSize(cita, anchoUtil);
     doc.text(apaLines, M, y);
     y += apaLines.length * 4 + 6;
 
-    // Línea separadora
     doc.setDrawColor(...azulMed);
     doc.setLineWidth(0.5);
     doc.line(M, y, W - M, y);
@@ -949,9 +1027,10 @@ function construirPDF() {
       { label: 'Espacios',       val: d.porEspacio.length, col: [245, 158, 11] },
     ];
 
-    const cardW = (W - M * 2 - 9) / 4;
+    const gapCards = 3;
+    const cardW = (anchoUtil - gapCards * 3) / 4;
     tarjetas.forEach((t, i) => {
-      const cx = M + i * (cardW + 3);
+      const cx = M + i * (cardW + gapCards);
       doc.setFillColor(...grisClar);
       doc.roundedRect(cx, y, cardW, 22, 2, 2, 'F');
       doc.setFillColor(...t.col);
@@ -968,68 +1047,106 @@ function construirPDF() {
     y += 30;
 
     // ── TABLA POR ESPACIO ──
+    // Columnas recalculadas en base a M (todo dentro de W-M en el extremo derecho)
+    const colEspacioX  = M + 3;
+    const colReservasX = M + 95;
+    const colHorasX    = M + 122;
+    const colPctX      = M + 145;
+    const barX         = M + 158;
+    const barW         = (W - M) - barX - 2; // termina 2mm antes del margen derecho real
+
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...negro);
     doc.text('2. Uso por Espacio', M, y);
     y += 6;
 
-    // Cabecera tabla
     doc.setFillColor(...azulOsc);
-    doc.rect(M, y, W - M * 2, 7, 'F');
+    doc.rect(M, y, anchoUtil, 7, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text('Espacio', M + 3, y + 4.5);
-    doc.text('Reservas', M + 90, y + 4.5, { align: 'center' });
-    doc.text('Horas totales', M + 120, y + 4.5, { align: 'center' });
-    doc.text('% del total', M + 152, y + 4.5, { align: 'center' });
+    doc.text('Espacio', colEspacioX, y + 4.5);
+    doc.text('Reservas', colReservasX, y + 4.5, { align: 'center' });
+    doc.text('Horas', colHorasX, y + 4.5, { align: 'center' });
+    doc.text('%', colPctX, y + 4.5, { align: 'center' });
     y += 7;
 
-    d.porEspacio.forEach((e, i) => {
-      const bg = i % 2 === 0 ? [255, 255, 255] : grisClar;
-      doc.setFillColor(...bg);
-      doc.rect(M, y, W - M * 2, 7, 'F');
-      const col = COLORES_ESPACIO[e.espacio] || '#7C6FFF';
-      const rgb = hexToRgb(col);
-      doc.setFillColor(...rgb);
-      doc.rect(M, y, 3, 7, 'F');
-      doc.setTextColor(...negro);
+    if (!d.porEspacio.length) {
+      doc.setFillColor(...grisClar);
+      doc.rect(M, y, anchoUtil, 8, 'F');
+      doc.setTextColor(...gris);
       doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ESPACIOS_NOMBRES[e.espacio] || e.espacio, M + 6, y + 4.5);
-      doc.text(String(e.reservas), M + 90, y + 4.5, { align: 'center' });
-      doc.text(String(e.horas || 0) + 'h', M + 120, y + 4.5, { align: 'center' });
-      const pct = d.total > 0 ? ((parseInt(e.reservas) / d.total) * 100).toFixed(1) : '0';
-      doc.text(pct + '%', M + 152, y + 4.5, { align: 'center' });
-      // Mini barra
-      const barW = 30;
-      const barFill = Math.round(parseInt(e.reservas) / Math.max(...d.porEspacio.map(x => parseInt(x.reservas))) * barW);
-      doc.setFillColor(230, 230, 240);
-      doc.rect(M + 162, y + 2, barW, 3, 'F');
-      doc.setFillColor(...rgb);
-      doc.rect(M + 162, y + 2, barFill, 3, 'F');
-      y += 7;
-    });
+      doc.setFont('helvetica', 'italic');
+      doc.text('Sin reservas registradas en este período.', M + anchoUtil / 2, y + 5.2, { align: 'center' });
+      y += 8;
+    } else {
+      const maxEspRow = Math.max(...d.porEspacio.map(x => parseInt(x.reservas)), 1);
+      d.porEspacio.forEach((e, i) => {
+        const bg = i % 2 === 0 ? [255, 255, 255] : grisClar;
+        doc.setFillColor(...bg);
+        doc.rect(M, y, anchoUtil, 7, 'F');
+        const col = COLORES_ESPACIO[e.espacio] || '#7C6FFF';
+        const rgb = hexToRgb(col);
+        doc.setFillColor(...rgb);
+        doc.rect(M, y, 3, 7, 'F');
+        doc.setTextColor(...negro);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        const nombreEsp = ESPACIOS_NOMBRES[e.espacio] || e.espacio;
+        doc.text(fitText(doc, nombreEsp, colReservasX - colEspacioX - 4), colEspacioX + 3, y + 4.5);
+        doc.text(String(e.reservas), colReservasX, y + 4.5, { align: 'center' });
+        doc.text(String(e.horas || 0) + 'h', colHorasX, y + 4.5, { align: 'center' });
+        const pct = d.total > 0 ? ((parseInt(e.reservas) / d.total) * 100).toFixed(1) : '0';
+        doc.text(pct + '%', colPctX, y + 4.5, { align: 'center' });
+
+        const barFill = Math.round(parseInt(e.reservas) / maxEspRow * barW);
+        doc.setFillColor(230, 230, 240);
+        doc.rect(barX, y + 2, barW, 3, 'F');
+        doc.setFillColor(...rgb);
+        doc.rect(barX, y + 2, Math.max(barFill, 1), 3, 'F');
+        y += 7;
+      });
+    }
     y += 8;
 
-    // ── TABLA POR MES ──
-    if (y > 230) { doc.addPage(); y = 20; }
+    // ── DISTRIBUCIÓN TEMPORAL ──
+    // Mensual → barras por día del mes · General/Anual → barras por mes del año
+    if (y > 220) { doc.addPage(); y = 20; }
 
+    const esInformeMensual = tipo === 'mensual';
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...negro);
-    doc.text(`3. Distribución Mensual — ${anioStr}`, M, y);
+    doc.text(
+      esInformeMensual
+        ? `3. Distribución Diaria — ${MESES_LARGO[d.mes - 1]} ${anioStr}`
+        : `3. Distribución Mensual — ${anioStr}`,
+      M, y
+    );
     y += 6;
 
-    const mesesData = Array.from({length:12}, (_,i) => {
-      const found = d.porMes.find(m => m.mes === i+1);
-      return found ? parseInt(found.reservas) : 0;
-    });
-    const maxM = Math.max(...mesesData, 1);
-    const chartH = 35, chartW = W - M * 2, barW2 = chartW / 12;
+    let etiquetasEje, valoresEje;
+    if (esInformeMensual) {
+      const diasEnMes = new Date(anioStr, d.mes, 0).getDate();
+      valoresEje = Array.from({length: diasEnMes}, (_, i) => {
+        const found = (d.porDia || []).find(x => x.dia === i + 1);
+        return found ? parseInt(found.reservas) : 0;
+      });
+      etiquetasEje = Array.from({length: diasEnMes}, (_, i) => String(i + 1));
+    } else {
+      valoresEje = Array.from({length: 12}, (_, i) => {
+        const found = d.porMes.find(m => m.mes === i + 1);
+        return found ? parseInt(found.reservas) : 0;
+      });
+      etiquetasEje = MESES_CORTO;
+    }
 
-    // Eje
+    const maxEje = Math.max(...valoresEje, 1);
+    const chartH = 35;
+    const barGap = esInformeMensual ? 0.5 : 3;
+    const barSlot = anchoUtil / valoresEje.length;
+
     doc.setDrawColor(220, 220, 230);
     doc.setLineWidth(0.2);
     for (let g = 0; g <= 4; g++) {
@@ -1037,57 +1154,108 @@ function construirPDF() {
       doc.line(M, gy, W - M, gy);
       doc.setFontSize(6);
       doc.setTextColor(...gris);
-      doc.text(String(Math.round(maxM * g / 4)), M - 3, gy + 1, { align: 'right' });
+      doc.text(String(Math.round(maxEje * g / 4)), M - 3, gy + 1, { align: 'right' });
     }
 
-    mesesData.forEach((v, i) => {
-      const bH = maxM > 0 ? (v / maxM) * chartH : 0;
-      const bx = M + i * barW2 + barW2 * 0.15;
-      const bw = barW2 * 0.7;
+    valoresEje.forEach((v, i) => {
+      const bH = maxEje > 0 ? (v / maxEje) * chartH : 0;
+      const bx = M + i * barSlot + barGap / 2;
+      const bw = Math.max(barSlot - barGap, 0.6);
       doc.setFillColor(...azulMed);
-      doc.roundedRect(bx, y + chartH - bH, bw, bH, 1, 1, 'F');
-      doc.setFontSize(6);
-      doc.setTextColor(...negro);
-      if (v > 0) doc.text(String(v), bx + bw / 2, y + chartH - bH - 1, { align: 'center' });
-      doc.setTextColor(...gris);
-      doc.text(MESES_CORTO[i], bx + bw / 2, y + chartH + 4, { align: 'center' });
+      doc.roundedRect(bx, y + chartH - bH, bw, bH, esInformeMensual ? 0.3 : 1, esInformeMensual ? 0.3 : 1, 'F');
+      // Etiqueta de valor arriba de la barra (solo si hay espacio y valor > 0, y no es mensual con muchas barras finitas)
+      if (v > 0 && !esInformeMensual) {
+        doc.setFontSize(6);
+        doc.setTextColor(...negro);
+        doc.text(String(v), bx + bw / 2, y + chartH - bH - 1, { align: 'center' });
+      }
+      // Etiquetas del eje X: en mensual solo cada 5 días para no amontonar
+      if (!esInformeMensual || (i + 1) % 5 === 0 || i === 0 || i === valoresEje.length - 1) {
+        doc.setFontSize(esInformeMensual ? 5 : 6);
+        doc.setTextColor(...gris);
+        doc.text(etiquetasEje[i], bx + bw / 2, y + chartH + 4, { align: 'center' });
+      }
     });
     y += chartH + 10;
 
-    // ── PRÓXIMAS RESERVAS ──
+    // ── LISTADO DE RESERVAS ──
     if (d.proximas.length > 0) {
       if (y > 220) { doc.addPage(); y = 20; }
+
+      const tituloListado = tipo === 'general'
+        ? '4. Próximas Reservas (30 días)'
+        : `4. Reservas del Período (${d.proximas.length})`;
+
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...negro);
-      doc.text('4. Próximas Reservas (30 días)', M, y);
+      doc.text(tituloListado, M, y);
       y += 6;
 
+      // Columnas recalculadas para que Título y Solicitante tengan más aire,
+      // suficiente para nombres largos como "Aula punto digital" sin overlap.
+      const cFecha = M + 3;
+      const cHora  = M + 32;
+      const cEsp   = M + 56;
+      const cTit   = M + 100;
+      const cSol   = M + 142;
+      const wFecha = cHora - cFecha - 2;
+      const wHora  = cEsp - cHora - 2;
+      const wEsp   = cTit - cEsp - 2;
+      const wTit   = cSol - cTit - 2;
+      const wSol   = (W - M) - cSol - 2;
+
       doc.setFillColor(...azulOsc);
-      doc.rect(M, y, W - M * 2, 7, 'F');
+      doc.rect(M, y, anchoUtil, 7, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
-      const cols4 = [M + 3, M + 45, M + 82, M + 115, M + 148];
-      ['Fecha', 'Horario', 'Espacio', 'Título', 'Solicitante'].forEach((h, i) =>
-        doc.text(h, cols4[i], y + 4.5));
+      doc.text('Fecha', cFecha, y + 4.5);
+      doc.text('Horario', cHora, y + 4.5);
+      doc.text('Espacio', cEsp, y + 4.5);
+      doc.text('Título', cTit, y + 4.5);
+      doc.text('Solicitante', cSol, y + 4.5);
       y += 7;
 
+      const maxFilas = tipo === 'general' ? d.proximas.length : d.proximas.length; // ya viene limitado por el server (200 máx)
+
       d.proximas.forEach((p, i) => {
-        if (y > 270) { doc.addPage(); y = 20; }
+        if (y > 273) {
+          doc.addPage();
+          y = 20;
+          // Repetir cabecera en la página nueva
+          doc.setFillColor(...azulOsc);
+          doc.rect(M, y, anchoUtil, 7, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(7.5);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Fecha', cFecha, y + 4.5);
+          doc.text('Horario', cHora, y + 4.5);
+          doc.text('Espacio', cEsp, y + 4.5);
+          doc.text('Título', cTit, y + 4.5);
+          doc.text('Solicitante', cSol, y + 4.5);
+          y += 7;
+        }
         doc.setFillColor(...(i % 2 === 0 ? [255,255,255] : grisClar));
-        doc.rect(M, y, W - M * 2, 7, 'F');
+        doc.rect(M, y, anchoUtil, 7, 'F');
         doc.setTextColor(...negro);
         doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
-        const fecha = formatFechaLarga(p.fecha);
-        doc.text(doc.splitTextToSize(fecha, 38)[0], cols4[0], y + 4.5);
-        doc.text(`${(p.hora_inicio||'').slice(0,5)}–${(p.hora_fin||'').slice(0,5)}`, cols4[1], y + 4.5);
-        doc.text(doc.splitTextToSize(ESPACIOS_NOMBRES[p.espacio]||p.espacio, 28)[0], cols4[2], y + 4.5);
-        doc.text(doc.splitTextToSize(p.titulo, 28)[0], cols4[3], y + 4.5);
-        doc.text(doc.splitTextToSize(p.solicitante, 28)[0], cols4[4], y + 4.5);
+
+        const fechaCorta = formatFechaLarga(p.fecha).replace(/^(\w+)\s(\d+)\sde\s(\w+)\s(\d+)$/, '$2 $3');
+        doc.text(fitText(doc, fechaCorta, wFecha), cFecha, y + 4.5);
+        doc.text(`${(p.hora_inicio||'').slice(0,5)}–${(p.hora_fin||'').slice(0,5)}`, cHora, y + 4.5);
+        doc.text(fitText(doc, ESPACIOS_NOMBRES[p.espacio] || p.espacio, wEsp), cEsp, y + 4.5);
+        doc.text(fitText(doc, p.titulo, wTit), cTit, y + 4.5);
+        doc.text(fitText(doc, p.solicitante, wSol), cSol, y + 4.5);
         y += 7;
       });
+    } else {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(...gris);
+      doc.text('No hay reservas registradas en este período.', M, y);
+      y += 8;
     }
 
     // ── PIE DE PÁGINA ──
@@ -1099,24 +1267,20 @@ function construirPDF() {
       doc.setFontSize(7);
       doc.setTextColor(...gris);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Centro Cultural Municipal — Sistema de Gestión de Reservas`, M, 291);
+      doc.text('Centro Cultural Municipal — Sistema de Gestión de Reservas', M, 291);
       doc.text(`Página ${pg} de ${totalPages}`, W - M, 291, { align: 'right' });
     }
 
-    const fname = `informe-reservas-${anioStr}-${fmtDate(new Date())}.pdf`;
+    const sufijoNombre = tipo === 'mensual'
+      ? `mensual-${anioStr}-${String(d.mes).padStart(2,'0')}`
+      : tipo === 'anual' ? `anual-${anioStr}` : `general-${anioStr}`;
+    const fname = `informe-${sufijoNombre}-${fmtDate(new Date())}.pdf`;
     doc.save(fname);
     showToast('PDF generado correctamente', 'success');
   } catch(e) {
     console.error('PDF error:', e);
     showToast('Error generando el PDF: ' + e.message, 'error');
   }
-}
-
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return [r,g,b];
 }
 
 init();

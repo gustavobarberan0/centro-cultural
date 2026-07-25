@@ -472,18 +472,41 @@ app.get('/api/reservas/conflictos', requireAuth, async (req, res) => {
 });
 
 // ── DASHBOARD STATS ───────────────────────────────────────────────────────────
+// Soporta 3 modos vía query params:
+//   General (default):  sin params → año actual, próximas reservas (30 días)
+//   Anual:               ?anio=2026 → todo ese año, sin filtro de mes
+//   Mensual:              ?anio=2026&mes=7 → solo ese mes, incluye desglose diario
 app.get('/api/stats', requireAdmin, async (req, res) => {
   try {
-    const hoy = new Date().toISOString().split('T')[0];
-    const anio = new Date().getFullYear();
+    const hoy  = new Date().toISOString().split('T')[0];
+    const anio = parseInt(req.query.anio) || new Date().getFullYear();
+    const mes  = req.query.mes ? parseInt(req.query.mes) : null; // 1-12 o null
 
-    // Totales generales
-    const [total, realizadas, pendientes, porEspacio, porMes] = await Promise.all([
-      pool.query('SELECT COUNT(*) as cnt FROM reservas'),
-      pool.query('SELECT COUNT(*) as cnt FROM reservas WHERE fecha < $1', [hoy]),
-      pool.query('SELECT COUNT(*) as cnt FROM reservas WHERE fecha >= $1', [hoy]),
+    if (mes && (mes < 1 || mes > 12)) return res.status(400).json({ error: 'Mes inválido' });
 
-      // Por espacio: cantidad de reservas y horas totales
+    let desde, hasta;
+    if (mes) {
+      desde = `${anio}-${String(mes).padStart(2,'0')}-01`;
+      const ultimoDia = new Date(anio, mes, 0).getDate();
+      hasta = `${anio}-${String(mes).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
+    } else {
+      desde = `${anio}-01-01`;
+      hasta = `${anio}-12-31`;
+    }
+
+    const esPeriodoEspecifico = !!(req.query.anio); // true si es informe mensual o anual explícito
+    const filtroFecha    = esPeriodoEspecifico ? 'fecha >= $1 AND fecha <= $2' : 'TRUE';
+    const paramsFiltro   = esPeriodoEspecifico ? [desde, hasta] : [];
+
+    const [total, realizadas, pendientes, porEspacio] = await Promise.all([
+      pool.query(`SELECT COUNT(*) as cnt FROM reservas WHERE ${filtroFecha}`, paramsFiltro),
+      esPeriodoEspecifico
+        ? pool.query('SELECT COUNT(*) as cnt FROM reservas WHERE fecha < $1 AND fecha >= $2 AND fecha <= $3', [hoy, desde, hasta])
+        : pool.query('SELECT COUNT(*) as cnt FROM reservas WHERE fecha < $1', [hoy]),
+      esPeriodoEspecifico
+        ? pool.query('SELECT COUNT(*) as cnt FROM reservas WHERE fecha >= $1 AND fecha >= $2 AND fecha <= $3', [hoy, desde, hasta])
+        : pool.query('SELECT COUNT(*) as cnt FROM reservas WHERE fecha >= $1', [hoy]),
+
       pool.query(`
         SELECT
           espacio,
@@ -492,30 +515,45 @@ app.get('/api/stats', requireAdmin, async (req, res) => {
             EXTRACT(EPOCH FROM (hora_fin::time - hora_inicio::time)) / 3600
           )::numeric, 1) as horas
         FROM reservas
+        WHERE ${filtroFecha}
         GROUP BY espacio
         ORDER BY reservas DESC
-      `),
-
-      // Por mes del año actual
-      pool.query(`
-        SELECT
-          EXTRACT(MONTH FROM fecha)::int as mes,
-          COUNT(*) as reservas
-        FROM reservas
-        WHERE EXTRACT(YEAR FROM fecha) = $1
-        GROUP BY mes
-        ORDER BY mes
-      `, [anio]),
+      `, paramsFiltro),
     ]);
 
-    // Proximas reservas (próximos 30 días)
-    const proximas = await pool.query(`
-      SELECT espacio, titulo, solicitante, fecha, hora_inicio, hora_fin
+    // Por mes (vista general y anual) — 12 meses del año pedido
+    const porMes = await pool.query(`
+      SELECT EXTRACT(MONTH FROM fecha)::int as mes, COUNT(*) as reservas
       FROM reservas
-      WHERE fecha >= $1 AND fecha <= $2
-      ORDER BY fecha, hora_inicio
-      LIMIT 10
-    `, [hoy, new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]]);
+      WHERE EXTRACT(YEAR FROM fecha) = $1
+      GROUP BY mes ORDER BY mes
+    `, [anio]);
+
+    // Por día (solo informe mensual) — todos los días del mes pedido
+    let porDia = { rows: [] };
+    if (mes) {
+      porDia = await pool.query(`
+        SELECT EXTRACT(DAY FROM fecha)::int as dia, COUNT(*) as reservas
+        FROM reservas
+        WHERE EXTRACT(YEAR FROM fecha) = $1 AND EXTRACT(MONTH FROM fecha) = $2
+        GROUP BY dia ORDER BY dia
+      `, [anio, mes]);
+    }
+
+    // Listado de reservas:
+    // - General: próximas 30 días desde hoy (comportamiento original, sin cambios)
+    // - Mensual/Anual: todas las reservas del período pedido (para el informe)
+    const proximas = esPeriodoEspecifico
+      ? await pool.query(`
+          SELECT espacio, titulo, solicitante, fecha, hora_inicio, hora_fin
+          FROM reservas WHERE fecha >= $1 AND fecha <= $2
+          ORDER BY fecha, hora_inicio LIMIT 200
+        `, [desde, hasta])
+      : await pool.query(`
+          SELECT espacio, titulo, solicitante, fecha, hora_inicio, hora_fin
+          FROM reservas WHERE fecha >= $1 AND fecha <= $2
+          ORDER BY fecha, hora_inicio LIMIT 10
+        `, [hoy, new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]]);
 
     res.json({
       total:      parseInt(total.rows[0].cnt),
@@ -523,6 +561,9 @@ app.get('/api/stats', requireAdmin, async (req, res) => {
       pendientes: parseInt(pendientes.rows[0].cnt),
       porEspacio: porEspacio.rows,
       porMes:     porMes.rows,
+      porDia:     porDia.rows,
+      periodo:    mes ? 'mensual' : (esPeriodoEspecifico ? 'anual' : 'general'),
+      mes:        mes,
       proximas:   proximas.rows,
       anio,
     });
