@@ -326,8 +326,7 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
   .detail-panel { width: 240px; }
   .detail-titulo { font-size: .95rem; }
 
-  .topbar-title { font-size: .92rem; }
-  .topbar-sub   { display: none; }
+  .topbar-titles { display: none; }
 
   .modal { max-width: 92vw; }
 
