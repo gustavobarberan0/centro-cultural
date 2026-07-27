@@ -737,7 +737,7 @@ html, body { height: 100%; font-family: 'Outfit', sans-serif; background: var(--
 
 /* Gráfico de columnas mensual */
 .dash-col-chart {
-  display: flex; align-items: flex-end; gap: 3px;
+  display: flex; align-items: stretch; gap: 3px;
   height: 120px; padding-bottom: 22px; position: relative;
   border-bottom: 1px solid var(--border);
 }
