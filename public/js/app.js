@@ -417,6 +417,8 @@ function abrirNueva(fecha=null, hi='08:00', hf='10:00') {
   document.getElementById('rHoraInicio').value = hi;
   document.getElementById('rHoraFin').value   = hf;
   ocultarConflictos();
+  resetRepetirUI();
+  document.getElementById('repetirWrap').style.display = 'block';
   abrirModal('modalReserva');
   setTimeout(checkConflictos, 300);
 }
@@ -434,6 +436,8 @@ function abrirEditar(id) {
   document.getElementById('rHoraInicio').value = ev.hora_inicio?.slice(0,5)||'';
   document.getElementById('rHoraFin').value    = ev.hora_fin?.slice(0,5)||'';
   ocultarConflictos();
+  resetRepetirUI();
+  document.getElementById('repetirWrap').style.display = 'none'; // no tiene sentido replicar al editar
   abrirModal('modalReserva');
 }
 
@@ -452,6 +456,7 @@ async function guardarReserva() {
   if (hora_fin<=hora_inicio)   return showToast('La hora de fin debe ser posterior al inicio','error');
   const body = {espacio,titulo,solicitante,descripcion,fecha,hora_inicio,hora_fin};
   const url  = state.editandoId ? `/api/reservas/${state.editandoId}` : '/api/reservas';
+  const creandoNueva = !state.editandoId;
   try {
     const r = await fetch(url,{method:state.editandoId?'PUT':'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d = await r.json();
@@ -459,13 +464,129 @@ async function guardarReserva() {
       if (d.error==='conflicto') { mostrarConflictos(d.conflictos,true); return; }
       return showToast(d.error||'Error al guardar','error');
     }
+
+    // ── Réplicas: solo al crear una reserva nueva, si el usuario activó "Repetir" ──
+    let resumenReplicas = '';
+    if (creandoNueva && document.getElementById('repetirCheck')?.checked) {
+      resumenReplicas = await crearReplicas(body);
+    }
+
     cerrarModal('modalReserva');
-    showToast(state.editandoId?'Reserva actualizada':'Reserva creada','success');
+    showToast((state.editandoId?'Reserva actualizada':'Reserva creada') + resumenReplicas, 'success');
     await cargarReservas();
     actualizarStats();
     renderCalendario();
     seleccionarReserva(d.id||state.editandoId);
   } catch { showToast('Error de conexión','error'); }
+}
+
+// ── Repetir / Replicar reserva ───────────────────────────────────────────────────
+function toggleRepetirUI() {
+  const check = document.getElementById('repetirCheck').checked;
+  document.getElementById('repetirOpciones').style.display = check ? 'block' : 'none';
+}
+
+function resetRepetirUI() {
+  const check = document.getElementById('repetirCheck');
+  if (check) check.checked = false;
+  document.getElementById('repetirOpciones').style.display = 'none';
+  document.getElementById('repetirCantidad').value = 4;
+  document.querySelectorAll('#diasSemanaCheck input').forEach(i => i.checked = false);
+  setRepetirTipo('semanal');
+}
+
+function setRepetirTipo(tipo) {
+  document.querySelectorAll('.repetir-tab').forEach(b => b.classList.toggle('active', b.dataset.tipo === tipo));
+  const cantidadWrap = document.getElementById('repetirCantidadWrap');
+  const diasWrap     = document.getElementById('repetirDiasWrap');
+  const label        = document.getElementById('repetirTipoLabel');
+  const hint         = document.getElementById('repetirHint');
+
+  if (tipo === 'dias') {
+    cantidadWrap.style.display = 'none';
+    diasWrap.style.display = 'block';
+    hint.textContent = 'Se crearán reservas en los días marcados, dentro de la misma semana que la fecha elegida arriba.';
+  } else {
+    cantidadWrap.style.display = 'block';
+    diasWrap.style.display = 'none';
+    if (tipo === 'semanal') {
+      label.textContent = 'cada semana';
+      hint.textContent = 'Se crearán reservas el mismo día de la semana, cada 7 días, con el mismo título, espacio y horario.';
+    } else {
+      label.textContent = 'cada mes';
+      hint.textContent = 'Se crearán reservas el mismo día del mes (ajustado si el mes no tiene ese día), con el mismo título, espacio y horario.';
+    }
+  }
+}
+
+// Suma "meses" a una fecha, ajustando el día si el mes destino es más corto (ej: 31 de enero + 1 mes → 28/29 de febrero)
+function addMonthsClamp(date, months) {
+  const targetMonthTotal = date.getMonth() + months;
+  const targetYear  = date.getFullYear() + Math.floor(targetMonthTotal / 12);
+  const targetMonth = ((targetMonthTotal % 12) + 12) % 12;
+  const diasEnMesDestino = new Date(targetYear, targetMonth + 1, 0).getDate();
+  const dia = Math.min(date.getDate(), diasEnMesDestino);
+  return new Date(targetYear, targetMonth, dia);
+}
+
+function calcularFechasReplica(fechaBaseStr, tipo, cantidad, diasSeleccionados) {
+  const fechas = [];
+  const base = new Date(fechaBaseStr + 'T00:00:00');
+
+  if (tipo === 'semanal') {
+    for (let i = 1; i <= cantidad; i++) {
+      const d = new Date(base);
+      d.setDate(d.getDate() + 7 * i);
+      fechas.push(fmtDate(d));
+    }
+  } else if (tipo === 'mensual') {
+    for (let i = 1; i <= cantidad; i++) {
+      fechas.push(fmtDate(addMonthsClamp(base, i)));
+    }
+  } else if (tipo === 'dias') {
+    // Encontrar el lunes de la semana de la fecha base (semana Lun-Dom)
+    const baseDow = base.getDay(); // 0=Dom .. 6=Sáb
+    const diffToMonday = (baseDow === 0 ? -6 : 1 - baseDow);
+    const monday = new Date(base);
+    monday.setDate(monday.getDate() + diffToMonday);
+
+    diasSeleccionados.forEach(dowStr => {
+      const dow = parseInt(dowStr, 10); // 0=Dom .. 6=Sáb (valor del checkbox)
+      const offsetDesdeLunes = dow === 0 ? 6 : dow - 1;
+      const d = new Date(monday);
+      d.setDate(d.getDate() + offsetDesdeLunes);
+      const dStr = fmtDate(d);
+      if (dStr !== fechaBaseStr) fechas.push(dStr); // evitar duplicar la fecha original
+    });
+  }
+  return fechas;
+}
+
+async function crearReplicas(bodyBase) {
+  const tabActivo = document.querySelector('.repetir-tab.active');
+  const tipo = tabActivo ? tabActivo.dataset.tipo : 'semanal';
+  const cantidad = parseInt(document.getElementById('repetirCantidad').value, 10) || 0;
+  const diasSel = Array.from(document.querySelectorAll('#diasSemanaCheck input:checked')).map(el => el.value);
+
+  const fechas = calcularFechasReplica(bodyBase.fecha, tipo, cantidad, diasSel);
+  if (!fechas.length) return '';
+
+  let creadas = 0, omitidas = 0;
+  for (const fecha of fechas) {
+    try {
+      const r2 = await fetch('/api/reservas', {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ ...bodyBase, fecha })
+      });
+      if (r2.ok) creadas++; else omitidas++;
+    } catch { omitidas++; }
+  }
+
+  let msg = '';
+  if (creadas)  msg += ` + ${creadas} réplica${creadas!==1?'s':''}`;
+  if (omitidas) msg += ` (${omitidas} omitida${omitidas!==1?'s':''} por conflicto)`;
+  return msg;
 }
 
 // ── Conflictos ─────────────────────────────────────────────────────────────────

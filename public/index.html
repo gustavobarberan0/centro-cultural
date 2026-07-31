@@ -193,6 +193,39 @@
           <input type="time" id="rHoraFin" onchange="checkConflictos()">
         </div>
       </div>
+
+      <div class="field repetir-wrap" id="repetirWrap">
+        <label class="check-repetir">
+          <input type="checkbox" id="repetirCheck" onchange="toggleRepetirUI()">
+          Repetir esta reserva
+        </label>
+        <div id="repetirOpciones" class="repetir-opciones" style="display:none">
+          <div class="repetir-tabs">
+            <button type="button" class="repetir-tab active" data-tipo="semanal" onclick="setRepetirTipo('semanal')">Semanal</button>
+            <button type="button" class="repetir-tab" data-tipo="mensual" onclick="setRepetirTipo('mensual')">Mensual</button>
+            <button type="button" class="repetir-tab" data-tipo="dias" onclick="setRepetirTipo('dias')">Días de esta semana</button>
+          </div>
+
+          <div id="repetirCantidadWrap" class="field" style="margin-top:.6rem">
+            <label style="text-transform:none;letter-spacing:0">Repetir <span id="repetirTipoLabel">cada semana</span>, <input type="number" id="repetirCantidad" min="1" max="52" value="4" style="width:56px;display:inline-block;padding:.2rem .4rem"> veces más</label>
+          </div>
+
+          <div id="repetirDiasWrap" class="field" style="margin-top:.6rem;display:none">
+            <label>Días adicionales, misma semana</label>
+            <div class="dias-semana-check" id="diasSemanaCheck">
+              <label><input type="checkbox" value="1"> Lun</label>
+              <label><input type="checkbox" value="2"> Mar</label>
+              <label><input type="checkbox" value="3"> Mié</label>
+              <label><input type="checkbox" value="4"> Jue</label>
+              <label><input type="checkbox" value="5"> Vie</label>
+              <label><input type="checkbox" value="6"> Sáb</label>
+              <label><input type="checkbox" value="0"> Dom</label>
+            </div>
+          </div>
+
+          <div class="repetir-hint" id="repetirHint">Se crearán reservas los próximos días de la semana, cada 7 días, con el mismo título, espacio y horario.</div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="cerrarModal('modalReserva')">Cancelar</button>
